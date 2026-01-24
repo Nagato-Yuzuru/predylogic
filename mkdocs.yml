@@ -1,0 +1,66 @@
+site_name: predylogic
+repo_url: https://github.com/Nagato-Yuzuru/predylogic
+site_url: https://Nagato-Yuzuru.github.io/predylogic
+site_description: Deferred Execution Composable Predicate Tool.
+site_author: Nagato Yuzuru
+edit_uri: edit/main/docs/
+repo_name: Nagato-Yuzuru/predylogic
+copyright: Maintained by <a href="https://Nagato-Yuzuru.com">Nagato-Yuzuru</a>.
+
+nav:
+  - Home: index.md
+  - Modules: modules.md
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [ "src" ]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_category_heading: true
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.tabs
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Nagato-Yuzuru/predylogic
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/predylogic
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences

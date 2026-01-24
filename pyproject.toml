@@ -1,0 +1,191 @@
+[project]
+authors = [{ name = "Nagato Yuzuru", email = "x4.nagato.yuzuru@gmail.com" }]
+classifiers = [
+  "Intended Audience :: Developers",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+description = "An embedded, composable schema-driven predicate logic engine."
+dynamic = ["version"]
+keywords = ['python']
+license-files = ["LICENSE"]
+name = "predylogic"
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+
+[project.urls]
+Documentation = "https://Nagato-Yuzuru.github.io/predylogic/"
+Homepage = "https://Nagato-Yuzuru.github.io/predylogic/"
+Repository = "https://github.com/Nagato-Yuzuru/predylogic"
+
+[dependency-groups]
+dev = [
+  "pre-commit>=4.5.1",
+  "tox-uv>=1.29.0",
+  "deptry>=0.24.0",
+  "ty>=0.0.13",
+  "ruff>=0.14.14",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.1",
+  "mkdocstrings[python]>=1.0.2",
+]
+test = [
+  "pytest>=9.0.2",
+  "pytest-codeblocks>=0.17.0",
+  "pytest-cov>=7.0.0",
+  "tach>=0.33.1",
+  "ty>=0.0.13",
+]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs"]
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["src/predylogic/_version.py"]
+packages = ["src/predylogic"]
+
+[tool.hatch.version]
+source = "vcs"
+tag-pattern = "^v(?P<version>\\d+\\.\\d+\\.\\d+.*)"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/predylogic/_version.py"
+
+[tool.hatch.build.targets.sdist]
+artifacts = ["src/predylogic/_version.py"]
+
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+fix = true
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = [
+  "ANN204",
+  "S101",
+  "E501",
+  "E731",
+  "D107",
+  "D104",
+  "D105",
+  "D100",
+  "D200",
+  "D202",
+  "D203",
+  "D205",
+  "D212",
+]
+select = [
+  "YTT",
+  "ANN",
+  "ASYNC",
+  "D",
+  "FBT",
+  "TID",
+  "N",
+  "S",
+  "B",
+  "G",
+  "A",
+  "C4",
+  "T10",
+  "SIM",
+  "I",
+  "C90",
+  "E",
+  "PLC",
+  "TD005",
+  "TD006",
+  "TD007",
+  "TC",
+  "T100",
+  "PLE",
+  "PLR",
+  "PLW",
+  "W",
+  "F",
+  "PGH",
+  "FURB",
+  "UP",
+  "RUF",
+  "COM",
+  "TRY",
+  "EM",
+]
+
+[tool.ruff.lint.flake8-annotations]
+suppress-none-returning = true
+
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.per-file-ignores]
+"src/predylogic/_version.py" = ["ALL"]
+"tests/*" = ["ANN", "D", "PLR0913", "PLR2004"]
+
+[tool.ruff.format]
+preview = true
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.tox]
+env_list = ["3.12", "3.13", "3.14", "lint"]
+requires = ["tox-uv>=1.29.0"]
+
+[tool.tox.env_run_base]
+commands = [
+  [
+    "pytest",
+    "--doctest-modules",
+    "tests",
+    "--cov",
+    "--cov-config=pyproject.toml",
+    "--cov-report=xml",
+  ],
+  [
+    "ty",
+    "check",
+  ],
+]
+dependency_groups = ["test"]
+pass_env = ["PYTHON_VERSION"]
+
+[tool.tox.env.lint]
+commands = [
+  [
+    "ruff",
+    "check",
+    "src",
+    "tests",
+  ],
+  [
+    "ruff",
+    "format",
+    "--check",
+    "src",
+    "tests",
+  ],
+]
+dependency_groups = ["dev"]
