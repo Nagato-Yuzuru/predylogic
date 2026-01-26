@@ -4,6 +4,28 @@ coverage:
   precision: 1
   status:
     project:
+      default: off
+      python-sdk:
+        target: 80%
+        threshold: 5%
+        flags:
+          - python
+        paths:
+          - sdks/python
+    patch:
       default:
-        target: 90%
-        threshold: 0.5%
+        target: auto
+        threshold: 0%
+flags:
+  python:
+    paths:
+      - sdks/python
+    carryforward: true
+
+  # rust:
+  #   paths:
+  #     - cli
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false

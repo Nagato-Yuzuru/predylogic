@@ -55,14 +55,12 @@ Please note this documentation assumes you already have **`uv`**, **`just`**, an
 ```bash
 cd <directory_in_which_repo_should_be_created>
 git clone git@github.com:YOUR_NAME/predylogic.git
-
 ```
 
 3. Navigate into the directory:
 
 ```bash
 cd predylogic
-
 ```
 
 4. Install the environment and hooks.
@@ -70,15 +68,13 @@ cd predylogic
    linting):
 
 ```bash
-just install
-
+just py-install
 ```
 
 5. Create a branch for local development:
 
 ```bash
 git checkout -b name-of-your-bugfix-or-feature
-
 ```
 
 Now you can make your changes locally.
@@ -88,22 +84,21 @@ Now you can make your changes locally.
    This runs dependency checks (`tach`, `deptry`), type checking (`ty`), and linters:
 
 ```bash
-just check
-
+just py-check
 ```
 
 8. Validate that all unit tests are passing:
 
 ```bash
 just test
-
 ```
 
 9. (Optional) If you modified the documentation, you can preview it locally:
 
-```bash
-just docs
+For example, when modifying Python documentation:
 
+```bash
+just py-docs
 ```
 
 10. Commit your changes and push your branch to GitHub.
@@ -115,7 +110,6 @@ git add .
 git commit -m "feat: add support for new predicate types"
 # or "fix: resolve issue with registry lookup"
 git push origin name-of-your-bugfix-or-feature
-
 ```
 
 11. Submit a pull request through the GitHub website.

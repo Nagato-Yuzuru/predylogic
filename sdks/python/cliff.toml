@@ -1,0 +1,37 @@
+[git]
+include_path = ["sdks/python/**/*"]
+tag_pattern = "^sdks/python/v[0-9]*"
+
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+
+commit_parsers = [
+  { message = "^feat", group = "🚀 Features" },
+  { message = "^fix", group = "🐛 Bug Fixes" },
+  { message = "^doc", group = "📚 Documentation" },
+  { message = "^perf", group = "⚡ Performance" },
+  { message = "^refactor", group = "🚜 Refactor" },
+  { message = "^test", group = "🧪 Testing" },
+  { message = "^chore", group = "⚙️ Miscellaneous Tasks" },
+]
+
+[changelog]
+header = """
+# Changelog
+All notable changes to the Python SDK will be documented in this file.\n
+"""
+
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="sdks/python/v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [Unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group }}
+    {% for commit in commits %}
+        - {{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}]({{ commit.id }}))
+    {% endfor %}
+{% endfor %}\
+"""

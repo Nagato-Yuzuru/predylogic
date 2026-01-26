@@ -1,0 +1,38 @@
+set shell := ["bash", "-c"]
+
+default:
+    @just --list
+
+# Install the virtual environment and install the pre-commit hooks
+@install all="false":
+    echo "Creating python virtual environment using uv"
+    [ {{ all }}="true" ] && uv sync --all-groups || uv sync --dev
+
+# Run code quality tools.
+check:
+    @echo "Checking lock file consistency with 'pyproject.toml'"
+    uv lock --locked
+    @echo "Linting code: Running pre-commit"
+    uv run pre-commit run -a
+    @echo "Static type checking: Running ty"
+    uv run ty check
+    @echo "Checking for obsolete dependencies: Running deptry"
+    uv run deptry src
+    @echo "Checking for dependency: Running tach"
+    uv run tach check
+
+# Test the code with pytest
+test:
+    @echo "Testing code: Running pytest"
+    uv sync --group=test
+    uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
+
+# Build wheel file
+build: clean-build
+    @echo "Creating wheel file"
+    uvx --from build pyproject-build --installer uv
+
+# Clean build artifacts
+clean-build:
+    @echo "Removing build artifacts"
+    uv run python -c "import shutil; import os; shutil.rmtree('dist') if os.path.exists('dist') else None"

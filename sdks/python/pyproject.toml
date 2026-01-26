@@ -52,7 +52,10 @@ packages = ["src/predylogic"]
 
 [tool.hatch.version]
 source = "vcs"
-tag-pattern = "^v(?P<version>\\d+\\.\\d+\\.\\d+.*)"
+tag-pattern = "^sdks/python/v(?P<version>\\d+\\.\\d+\\.\\d+.*)"
+
+[tool.hatch.version.raw-options]
+root = "../.."
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/predylogic/_version.py"

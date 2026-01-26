@@ -1,20 +1,27 @@
-name: Main
-
+name: python-ci.yml
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+    paths:
+      - 'sdks/python/**'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/**'
   pull_request:
     types: [ opened, synchronize, reopened, ready_for_review ]
+    branches: [ "main" ]
 
 jobs:
-  quality:
+  quality-python:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdks/python # <--- 核心修改：进入子目录
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -34,9 +41,10 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: sdks/python
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
@@ -44,24 +52,27 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests
-        run: uv run pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+        run: uv run pytest tests --cov=src --cov-config=pyproject.toml --cov-report=xml
 
       - name: Check typing
         run: uv run ty check
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./sdks/python/coverage.xml
+          flags: python
+          fail_ci_if_error: true
 
   check-docs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
 
       - name: Check if documentation can be built
-        run: uv run mkdocs build -s
+        run: uv run --project=sdks/python mkdocs build -s
