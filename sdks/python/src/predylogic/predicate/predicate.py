@@ -1,14 +1,22 @@
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable
-from typing import Self
+from typing import Generic, TypeVar
+
+if sys.version_info < (3, 11):
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 from predylogic.predicate.errs import PredicateExecuteError
 
-type PredicateFn[T] = Callable[[T], bool]
+T_contra = TypeVar("T_contra", contravariant=True)
+
+PredicateFn = Callable[[T_contra], bool]
 
 
-class Predicate[T]:
+class Predicate(Generic[T_contra]):
     """
     The Predicate is a lazy-evaluated function.
 
@@ -24,10 +32,10 @@ class Predicate[T]:
 
     """
 
-    def __init__(self, fn: PredicateFn[T]):
+    def __init__(self, fn: PredicateFn[T_contra]):
         self.fn = fn
 
-    def __call__(self, obj: T) -> bool:
+    def __call__(self, obj: T_contra) -> bool:
         """
         Execution Logic.
 
@@ -42,12 +50,12 @@ class Predicate[T]:
             msg = "Predicate execution failed"
             raise PredicateExecuteError(msg) from e
 
-    def __and__(self, other: Predicate[T]) -> Self:
+    def __and__(self, other: Predicate[T_contra]) -> Self:
         if not isinstance(other, Predicate):
             return NotImplemented
         return self.__class__(lambda x: self(x) and other(x))
 
-    def __or__(self, other: Predicate[T]) -> Self:
+    def __or__(self, other: Predicate[T_contra]) -> Self:
         if not isinstance(other, Predicate):
             return NotImplemented
         return self.__class__(lambda x: self(x) or other(x))
