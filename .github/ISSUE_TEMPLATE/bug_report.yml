@@ -1,0 +1,90 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve predylogic
+title: "[Bug]: "
+labels: [ "type: bug", "priority: medium" ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        Please verify that your issue is not already reported in the [issue tracker](https://github.com/Nagato-Yuzuru/predylogic/issues).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: I tried to load a Regex rule but it failed with...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Please provide the steps to reproduce the behavior.
+      placeholder: |
+        1. Define a rule with `Annotated[..., Regex]`
+        2. Load config from JSON
+        3. Run `instantiate_rule`
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Rule Configuration / Schema
+      description: Please paste the relevant rule definition (Python) or configuration (YAML/JSON) that causes the issue.
+      render: python
+      placeholder: |
+        # Rule Definition
+        @predicate
+        def my_rule(ctx, pattern: Annotated[re.Pattern, Regex]): ...
+
+        # Config Payload
+        {"op": "my_rule", "args": {"pattern": 123}}
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Traceback
+      description: Please copy and paste any relevant log output.
+      render: shell
+
+  - type: dropdown
+    id: env
+    attributes:
+      label: Environment
+      description: What version of software are you running?
+      options:
+        - "Python 3.10"
+        - "Python 3.11"
+        - "Python 3.12"
+        - "Python 3.13"
+        - "Python 3.14 (Dev)"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: PredyLogic Version
+      description: Which version of predylogic are you using? (e.g. 0.1.0, main branch)
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS / Platform
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true

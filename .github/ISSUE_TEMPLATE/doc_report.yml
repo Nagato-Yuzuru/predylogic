@@ -1,0 +1,33 @@
+name: 📝 Documentation Issue
+description: Report errors in documentation or suggest improvements
+title: "[Doc]: "
+labels: ["type: docs", "priority: low", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found a typo? Is a guide unclear? Let us know!
+
+  - type: textarea
+    id: location
+    attributes:
+      label: URL / File Location
+      description: Where did you find the issue?
+      placeholder: https://nagato-yuzuru.github.io/predylogic/guide/regex/
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: What is wrong or missing?
+      placeholder: The example code for `Regex` predicate is missing an import statement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Change
+      description: How should we fix it?

@@ -1,0 +1,44 @@
+name: 🚀 Feature Request
+description: Suggest an idea for this project
+title: "[Feat]: "
+labels: [ "type: feature", "priority: low" ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in improving predylogic!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+      placeholder: I'm always frustrated when I have to manually compile CEL scripts...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+      placeholder: I want a `@predicate` decorator that automatically handles compilation cache.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Willingness to contribute
+      description: The project is run by volunteers. Would you be willing to submit a PR?
+      options:
+        - "Yes, I can submit a PR! (Please assign to me)"
+        - "No, I cannot submit a PR at this time"
+    validations:
+      required: true

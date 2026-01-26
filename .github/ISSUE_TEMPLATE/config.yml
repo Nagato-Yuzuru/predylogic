@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/Nagato-Yuzuru/predylogic/discussions
+    about: Please ask questions or discuss general ideas here.
+  - name: Security Policy
+    url: https://github.com/Nagato-Yuzuru/predylogic/security/policy
+    about: Please report security vulnerabilities privately.
