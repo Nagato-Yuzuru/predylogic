@@ -1,22 +1,36 @@
 [project]
 authors = [{ name = "Nagato Yuzuru", email = "x4.nagato.yuzuru@gmail.com" }]
 classifiers = [
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+  "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = []
+
+keywords = [
+  "rule-engine",
+  "predicate-logic",
+  "schema-driven",
+  "configuration",
+  "policy-engine",
+]
+
+dependencies = ["typing-extensions>=4.15.0"]
 description = "An embedded, composable schema-driven predicate logic engine."
 dynamic = ["version"]
-keywords = ['python']
 license-files = ["LICENSE"]
 name = "predylogic"
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
+requires-python = ">=3.10,<4.0"
 
 [project.urls]
 Documentation = "https://Nagato-Yuzuru.github.io/predylogic/"
@@ -65,7 +79,7 @@ artifacts = ["src/predylogic/_version.py"]
 
 
 [tool.ty.environment]
-python-version = "3.12"
+python-version = "3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -73,7 +87,7 @@ testpaths = ["tests"]
 [tool.ruff]
 fix = true
 line-length = 120
-target-version = "py312"
+target-version = "py310"
 
 [tool.ruff.lint]
 ignore = [
@@ -154,7 +168,7 @@ branch = true
 source = ["src"]
 
 [tool.tox]
-env_list = ["3.12", "3.13", "3.14", "lint"]
+env_list = ["3.10", "3.11", "3.12", "3.13", "3.14", "lint"]
 requires = ["tox-uv>=1.29.0"]
 
 [tool.tox.env_run_base]

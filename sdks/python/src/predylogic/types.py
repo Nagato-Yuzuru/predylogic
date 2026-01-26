@@ -1,14 +1,17 @@
-from typing import Protocol
+from typing import ParamSpec, Protocol, TypeVar
+
+RunCtx_contra = TypeVar("RunCtx_contra", contravariant=True)
+RuleParams = ParamSpec("RuleParams")
 
 
-class RuleDef[RunCtx, **RuleParams](Protocol):
+class RuleDef(Protocol[RunCtx_contra, RuleParams]):
     """
     A callable that takes a context and positional and keyword arguments and returns a boolean.
     """
 
     __name__: str
 
-    def __call__(self, ctx: RunCtx, /, *args: RuleParams.args, **kwargs: RuleParams.kwargs) -> bool:
+    def __call__(self, ctx: RunCtx_contra, /, *args: RuleParams.args, **kwargs: RuleParams.kwargs) -> bool:
         """
         Take a context and positional and keyword arguments and returns a boolean.
 
