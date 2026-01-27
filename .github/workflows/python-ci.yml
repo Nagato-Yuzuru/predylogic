@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: sdks/python # <--- 核心修改：进入子目录
+        working-directory: sdks/python
     steps:
       - name: Check out
         uses: actions/checkout@v6
