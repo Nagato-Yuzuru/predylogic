@@ -1,0 +1,61 @@
+name: ♻️ Refactor / Tech Debt
+description: Propose a code cleanup, architectural improvement, or technical debt payment
+title: "[Refactor]: "
+labels: ["type: refactor", "priority: medium"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Refactoring Principle:** Change the *internal structure* without changing the *external behavior*.
+        If this change adds new functionality, please use the **Feature Request** template instead.
+
+  - type: textarea
+    id: target
+    attributes:
+      label: Target Module / Component
+      description: Which part of the codebase needs cleaning? (File path, Class name, Function)
+      placeholder: src/predylogic/registry.py (The `instantiate_rule` function)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: smell
+    attributes:
+      label: Code Smell / Reason
+      description: Why do we need to do this?
+      options:
+        - "Complexity (Cyclomatic complexity is too high)"
+        - "Readability (Spaghetti code / Hard to understand)"
+        - "Duplication (DRY violation)"
+        - "Performance (Bottleneck optimization)"
+        - "Coupling (Tight dependency / Circular imports)"
+        - "Legacy (Updating to modern Python syntax)"
+        - "Testing (Hard to unit test)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: How will you improve it?
+      placeholder: |
+        Extract the validation logic into a separate `Validator` class.
+        Use `functools.partial` instead of nested closures.
+    validations:
+      required: true
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk Analysis
+      description: What could possibly break? Are there comprehensive tests covering this area?
+      placeholder: Low risk. This module has 100% test coverage.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-Refactor Checklist
+      options:
+        - label: I confirm this change aims to preserve existing behavior (API compatible).
+        - label: Existing tests are sufficient to detect regressions (if not, I will add tests first).
