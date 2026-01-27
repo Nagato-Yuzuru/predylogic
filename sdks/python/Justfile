@@ -25,7 +25,7 @@ check:
 test:
     @echo "Testing code: Running pytest"
     uv sync --group=test
-    uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
+    uv run pytest --cov --cov-config=pyproject.toml --cov-report=xml
 
 # Build wheel file
 build: clean-build

@@ -1,3 +1,3 @@
-from .registry import GlobalRegistryManager, Registry, rule_def
+from .registry import Registry, RegistryManager
 
-__all__ = ["GlobalRegistryManager", "Registry", "rule_def"]
+__all__ = ["Registry", "RegistryManager"]
