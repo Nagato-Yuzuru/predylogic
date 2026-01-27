@@ -1,8 +1,8 @@
 from .predicate import Predicate
-from .register import Registry, rule_def
+from .register import Registry, RegistryManager
 
 __all__ = [
     "Predicate",
     "Registry",
-    "rule_def",
+    "RegistryManager",
 ]

@@ -7,6 +7,13 @@ class RegisterError(Exception):
     ...
 
 
+class RuleDefNotNamedError(RegisterError):
+    """Raised when a rule is not decorated with @rule_def."""
+
+    def __init__(self):
+        super().__init__("RuleDef must have a name.")
+
+
 class RegistryNameConflictError(RegisterError):
     """
     Raised when attempting to registry a rule with a name that is already in use.
