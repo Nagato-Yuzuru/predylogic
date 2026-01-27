@@ -1,0 +1,53 @@
+name: ♟️ Epic / Tracking Issue
+description: Track a large project goal that consists of multiple sub-issues
+title: "[Epic]: "
+labels: [ "type: feature", "size: epic", "status: wip" ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to track a **large scope of work** (an Epic).
+        Break it down into smaller, actionable tasks using the Task List below.
+        You can convert tasks into real issues by hovering over them and clicking the circle icon.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal / Objective
+      description: What is the high-level goal of this Epic?
+      placeholder: Implement the Rust-based CLI with full feature parity...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / Motivation
+      description: Why are we doing this? Link to any RFCs or design docs.
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Implementation Tasks (The Checklist)
+      description: |
+        List the steps required to complete this Epic.
+        - Use `- [ ] Task Name` syntax.
+        - You can convert these to issues later.
+      placeholder: |
+        - [ ] Design the CLI argument parsing structure
+        - [ ] Implement the config loader
+        - [ ] Port the Regex engine
+        - [ ] Add integration tests
+        - [ ] Update documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      description: When can we close this Epic?
+      placeholder: |
+        - All tasks are checked
+        - CI is green
+        - Docs are published

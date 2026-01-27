@@ -1,0 +1,57 @@
+name: 📜 RFC / Proposal
+description: Propose a roadmap item, architectural change, or benchmark plan
+title: "[RFC]: "
+labels: ["type: proposal", "status: wip"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for **Roadmap Items**, **Architectural Decisions**, **Benchmark Plans**, or generic **Proposals**.
+        These issues track *what we want to do* and *why*, rather than just coding tasks.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph explanation of the proposal.
+      placeholder: We propose to implement a Rust-based CLI for improved performance...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation / Goals
+      description: Why are we doing this? What use cases does it support? What is the expected outcome (e.g. 10x faster benchmark)?
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Detailed Design / Plan
+      description: |
+        - How will this work?
+        - What are the technical trade-offs?
+        - If this is a Roadmap item, list the milestones.
+        - If this is a Benchmark, list the scenarios to test.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What else did we consider? Why did we reject it?
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact Level
+      options:
+        - "Minor (Internal cleanup / small change)"
+        - "Medium (New feature / noticeable change)"
+        - "Major (Breaking change / Architectural shift)"
+        - "Critical (Core Roadmap Item)"
+    validations:
+      required: true
