@@ -2,6 +2,7 @@
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/Nagato-Yuzuru/predylogic?utm_source=badge)
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Nagato-Yuzuru/predylogic/python-ci.yml)
 [![Release](https://img.shields.io/github/v/release/Nagato-Yuzuru/predylogic)](https://img.shields.io/github/v/release/Nagato-Yuzuru/predylogic)

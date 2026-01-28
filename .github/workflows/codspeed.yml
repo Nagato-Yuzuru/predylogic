@@ -1,0 +1,32 @@
+name: CodSpeed
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  benchmarks:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdks/python
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-python-env
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v4
+        with:
+          mode: simulation
+          run: uv run pytest tests/bench_predicate.py tests/bench_registry.py --codspeed
