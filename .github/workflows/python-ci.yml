@@ -6,10 +6,12 @@ on:
       - 'sdks/python/**'
       - 'docs/**'
       - 'mkdocs.yml'
-      - '.github/workflows/**'
+      - '.github/workflows/python-ci.yml'
   pull_request:
-    types: [ opened, synchronize, reopened, ready_for_review ]
+    types: [ opened, synchronize, ready_for_review ]
     branches: [ "main" ]
+  workflow_dispatch:
+
 
 jobs:
   quality-python:

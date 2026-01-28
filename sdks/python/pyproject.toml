@@ -53,6 +53,7 @@ test = [
   "pytest>=9.0.2",
   "pytest-benchmark>=5.2.3",
   "pytest-codeblocks>=0.17.0",
+  "pytest-codspeed>=4.2.0",
   "pytest-cov>=7.0.0",
   "tach>=0.33.1",
   "ty>=0.0.13",
