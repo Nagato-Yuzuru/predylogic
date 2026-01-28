@@ -1,3 +1,4 @@
+import gc
 import sys
 
 if sys.version_info < (3, 11):
@@ -19,3 +20,9 @@ def factory(request):
             return CurrentFactory()
         case _:
             assert_never(request.param)  # ty:ignore[type-assertion-failure]
+
+
+@pytest.fixture(scope="function", autouse=True)
+def clean_heap_isolation():
+    gc.collect()
+    yield

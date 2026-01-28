@@ -3,7 +3,7 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'sdks/python/**'
+      - 'sdks/python/src/**'
       - 'docs/**'
       - 'mkdocs.yml'
       - '.github/workflows/python-ci.yml'

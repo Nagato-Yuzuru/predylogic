@@ -4,13 +4,13 @@ on:
     branches:
       - "main"
     paths:
-      - "sdks/python/src/predylogic"
-      - "sdks/python/benchmarks"
+      - "sdks/python/src/**"
+      - "sdks/python/benchmarks/**"
       - ".github/workflows/python-benchmark.yml"
   pull_request:
     paths:
-      - "sdks/python/src/predylogic"
-      - "sdks/python/benchmarks"
+      - "sdks/python/src/**"
+      - "sdks/python/benchmarks/**"
       - ".github/workflows/python-benchmark.yml"
     types: [ opened, synchronize, ready_for_review ]
     branches: [ "main" ]
