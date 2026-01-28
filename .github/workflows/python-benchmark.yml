@@ -1,0 +1,39 @@
+name: python-benchmark.yml
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "sdks/python/src/predylogic"
+      - "sdks/python/benchmarks"
+  pull_request:
+    paths:
+      - "sdks/python/src/predylogic"
+      - "sdks/python/benchmarks"
+    types: [ ready_for_review ]
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    name: Run CodSpeed
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdks/python
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: "3.13"
+
+      - name: Run Benchmark with CodSpeed
+        uses: CodSpeedHQ/action@v4
+        with:
+          mode: simulation
+          run: |
+            uv run pytest benchmarks/ -k "current" --codspeed --benchmark-only

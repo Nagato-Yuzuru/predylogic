@@ -1,3 +1,5 @@
+""" """
+
 from __future__ import annotations
 
 import sys
@@ -28,7 +30,6 @@ class Predicate(Generic[T_contra]):
     Args:
         fn:
             A function that takes an object of type T and returns a boolean.
-
     """
 
     def __init__(self, fn: PredicateFn[T_contra]):
@@ -38,6 +39,7 @@ class Predicate(Generic[T_contra]):
         """
         Execution Logic.
         """
+
         return self.fn(obj)
 
     def __and__(self, other: Predicate[T_contra]) -> Self:
@@ -52,5 +54,3 @@ class Predicate(Generic[T_contra]):
 
     def __invert__(self) -> Self:
         return self.__class__(lambda x: not self(x))
-
-    # TODO: __repr__ for debug.

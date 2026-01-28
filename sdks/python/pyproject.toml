@@ -42,14 +42,16 @@ dev = [
   "pre-commit>=4.5.1",
   "tox-uv>=1.29.0",
   "deptry>=0.24.0",
-  "ty>=0.0.13",
+  "ty>=0.0.14",
   "ruff>=0.14.14",
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.1",
   "mkdocstrings[python]>=1.0.2",
 ]
+prof = ["memray>=1.19.1", "py-spy>=0.4.1"]
 test = [
   "pytest>=9.0.2",
+  "pytest-benchmark>=5.2.3",
   "pytest-codeblocks>=0.17.0",
   "pytest-cov>=7.0.0",
   "tach>=0.33.1",
@@ -82,6 +84,8 @@ artifacts = ["src/predylogic/_version.py"]
 python-version = "3.10"
 
 [tool.pytest.ini_options]
+addopts = "--strict-markers"
+norecursedirs = ["benchmarks"]
 testpaths = ["tests"]
 
 [tool.ruff]
@@ -154,6 +158,8 @@ convention = "google"
 allow-dict-calls-with-keyword-arguments = true
 
 [tool.ruff.lint.per-file-ignores]
+"benchmarks/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
+"prof/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
 "src/predylogic/_version.py" = ["ALL"]
 "tests/*" = ["ANN", "D", "PLR0913", "PLR2004"]
 
