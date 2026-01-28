@@ -30,9 +30,12 @@ PY_SDK_PATH := "./sdks/python"
     just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile build
 
 # Test if documentation of python can be built without warnings or errors
-py-docs-test:
+docs-test:
     uv run --project={{PY_SDK_PATH}} mkdocs build -s
 
+# Build documentation of python
+docs-build:
+    uv run --project={{PY_SDK_PATH}} mkdocs build --clean
 # Build and serve the documentation of python
-py-docs:
+docs-serce:
     uv run  --project={{PY_SDK_PATH}} mkdocs serve

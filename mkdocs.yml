@@ -10,6 +10,10 @@ copyright: Maintained by <a href="https://Nagato-Yuzuru.com">Nagato-Yuzuru</a>.
 nav:
   - Home: index.md
   - Modules: modules.md
+  - Design:
+      - Overview: design/index.md
+      - Architecture Decisions:
+          - "ADR 001: Evaluation Engine": design/adr/001_evaluation_engine.md
 plugins:
   - search
   - mkdocstrings:
@@ -21,6 +25,20 @@ plugins:
             show_source: false
             show_root_heading: true
             show_category_heading: true
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      slide_effect: slide
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: true
+      skip_classes:
+        - custom-skip-class
+      auto_caption: true
+      caption_position: bottom
+
 
 theme:
   name: material
@@ -61,6 +79,8 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
+  - admonition
+  - pymdownx.details
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences

@@ -50,7 +50,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        exclude: ^(.*\.lock$)
+        exclude: \.(lock|html?)$
         additional_dependencies:
           - tomli
 
