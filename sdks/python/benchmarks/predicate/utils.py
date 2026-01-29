@@ -10,6 +10,10 @@ def true_fn(_):
     return True
 
 
+def false_fn(_):
+    return False
+
+
 def make_naive_chain(depth: int):
     func_name = f"naive_chain_{depth}"
     calls = ["true_fn(x)"] * depth

@@ -37,6 +37,7 @@ class DefaultTraceStyle(TraceStyle):
     Default trace style implementation.
     """
 
+    # TODO: based on the style of the terminal.
     ...
 
 
@@ -47,7 +48,7 @@ class Trace(Generic[T_contra]):
     """
 
     success: bool
-    operator: Literal[LogicOp, "PRUE_BOOL"]
+    operator: Literal[LogicOp, "PRUE_BOOL", "SKIP"]
     children: tuple[Trace, ...] = field(default_factory=list)
 
     node: Predicate[T_contra] | None = field(default=None, repr=False, compare=False)

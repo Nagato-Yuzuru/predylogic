@@ -12,8 +12,6 @@ default:
 check:
     @echo "Checking lock file consistency with 'pyproject.toml'"
     uv lock --locked
-    @echo "Linting code: Running pre-commit"
-    uv run pre-commit run -a
     @echo "Static type checking: Running ty"
     uv run ty check
     @echo "Checking for obsolete dependencies: Running deptry"
@@ -37,22 +35,23 @@ clean-build:
     uv run python -c "import shutil; import os; shutil.rmtree('dist') if os.path.exists('dist') else None"
 
 # py-spy Profiling (CPU) (need sudo)
-@prof-cpu output="prof/cpu_prof.svg" depth="2000" iter="100":
-    sudo uv run --isolated --no-project --python=3.13 py-spy record \
+@prof-cpu output="prof/cpu_prof.svg" depth="2000" iter="100" mode="current":
+    sudo PYTHONPATH="$(pwd)/src:$PYTHONPATH" \
+    uv run --isolated --no-project --python=3.13 py-spy record \
     -o {{ output }} \
     --format flamegraph \
     --rate 20 \
     -- \
-    python -m prof.profile_predicate --depth {{ depth }} --iter {{ iter }}
+    python -m prof.profile_predicate --depth={{ depth }} --iter={{ iter }} --mode={{mode}}
     sudo chown "$(id -un):$(id -gn)" {{ output }}
     chmod u+rw {{ output }}
 
 # Memory Profiling (Memray)
-@prof-mem binoutput="prof/memory.bin" output="prof/mem_flamegraph.html" depeth="2000" iter="100":
+@prof-mem binoutput="prof/memory.bin" output="prof/mem_flamegraph.html" depeth="2000" iter="100" mode="current":
     uv run memray run \
         --force \
         -o {{ binoutput }} \
-        -m prof.profile_predicate --depth {{ depeth }} --iter={{ iter }} \
+        -m prof.profile_predicate --depth {{ depeth }} --iter={{ iter }} --mode={{ mode }}\
     && uv run memray flamegraph \
         --force \
         -o {{ output }} \

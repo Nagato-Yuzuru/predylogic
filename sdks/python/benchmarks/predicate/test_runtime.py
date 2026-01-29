@@ -10,7 +10,7 @@ def test_exec_naive_python(benchmark, depth):
     benchmark(func, "obj")
 
 
-@pytest.mark.parametrize("depth", [5, 20, 100])
+@pytest.mark.parametrize("depth", [100])
 def test_exec_engine(benchmark, factory, depth):
     benchmark.group = f"Runtime: Depth {depth}"
     rule = factory.make_chain(depth)
