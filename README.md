@@ -59,7 +59,7 @@ Define your context, register atomic predicates, and compose them using standard
 
 ```python
 from typing import TypedDict
-from predylogic import Registry, rule_def
+from predylogic import Registry
 
 
 # 1. Define the Context (or Protocol or Pydantic BaseModel, or any other type)
@@ -74,12 +74,12 @@ registry = Registry[UserCtx]("my_first_registry")
 
 
 # 3. Define Atomic Predicates
-@rule_def(registry)
+@registry.rule_def()
 def is_adult(ctx: UserCtx, threshold: int = 18) -> bool:
     return ctx["age"] >= threshold
 
 
-@rule_def(registry)
+@registry.rule_def("match_user_role")
 def has_role(ctx: UserCtx, role: str) -> bool:
     return ctx["role"] == role
 
@@ -91,6 +91,7 @@ access_policy = is_adult(18) & has_role("admin")
 # 5. Execute
 user = {"age": 20, "is_active": True, "role": "admin"}
 assert access_policy(user) is True
+
 ```
 
 ## Roadmap
