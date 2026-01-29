@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from predylogic.predicate import Predicate
+from predylogic import predicate
 
 
 class UserCtx(TypedDict):
@@ -11,8 +11,8 @@ class UserCtx(TypedDict):
 
 
 def test_predicate_combinations():
-    adult = Predicate(lambda ctx: ctx["age"] >= 18)
-    active = Predicate(lambda ctx: ctx["active"])
+    adult = predicate(lambda ctx: ctx["age"] >= 18)
+    active = predicate(lambda ctx: ctx["active"])
 
     adult_and_active = adult & active
     active_or_adult = active | adult

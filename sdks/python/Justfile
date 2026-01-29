@@ -24,7 +24,6 @@ check:
 # Test the code with pytest
 test:
     @echo "Testing code: Running pytest"
-    uv sync --group=test
     uv run pytest --cov --cov-config=pyproject.toml --cov-report=xml
 
 # Build wheel file

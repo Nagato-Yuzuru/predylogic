@@ -6,7 +6,7 @@ from functools import wraps
 from threading import RLock
 from typing import TYPE_CHECKING, Generic, ParamSpec, Protocol, TypeVar, runtime_checkable
 
-from predylogic.predicate import Predicate
+from predylogic.predicate import Predicate, predicate
 from predylogic.register.errs import RegistryNameConflictError, RuleDefConflictError, RuleDefNotNamedError
 
 if TYPE_CHECKING:
@@ -221,7 +221,7 @@ class RuleDefConverter(Generic[T_contra], RuleDecorator[T_contra]):
 
         @wraps(fn)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Predicate[T_contra]:
-            return Predicate(lambda x: fn(x, *args, **kwargs))
+            return predicate(lambda x: fn(x, *args, **kwargs))
 
         sig = inspect.signature(fn)
 

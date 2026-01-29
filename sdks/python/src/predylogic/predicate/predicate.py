@@ -1,56 +1,152 @@
 from __future__ import annotations
 
-import sys
+from abc import ABC
 from collections.abc import Callable
-from typing import Generic, TypeVar
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeGuard, TypeVar, final, overload
 
-if sys.version_info < (3, 11):
-    from typing_extensions import Self
-else:
-    from typing import Self
-
+if TYPE_CHECKING:
+    from predylogic.trace.trace import Trace
+    from predylogic.types import PredicateNodeType
 
 T_contra = TypeVar("T_contra", contravariant=True)
 
 PredicateFn = Callable[[T_contra], bool]
 
 
-class Predicate(Generic[T_contra]):
+@dataclass(frozen=True, kw_only=True)
+class Predicate(Generic[T_contra], ABC):
     """
-    The Predicate is a lazy-evaluated function.
+    Base class for predicate nodes in the predicate tree.
+    """
 
-    It permits logical combinations over contexts of the same type.
-    A predicate is a callable object that accepts objects of type T.
-    It executes all combined logic and returns a bool when called.
+    node_type: PredicateNodeType = field(init=False)
+    desc: str | None = field(default=None)
 
-    Use the &, |, and ~ symbols for logical operations.
+    __compiled_fn: Callable[[T_contra], bool | Trace] | None = field(default=None, init=False, repr=False)
+
+    @overload
+    def __call__(
+        self,
+        ctx: T_contra,
+        /,
+        *,
+        trace: Literal[True] = True,
+        short_circuit: bool = True,
+        fail_skip: tuple[type[Exception], ...] | None = None,
+    ) -> Trace: ...
+
+    @overload
+    def __call__(
+        self,
+        ctx: T_contra,
+        /,
+        *,
+        trace: Literal[False] = False,
+        short_circuit: bool = True,
+        fail_skip: tuple[type[Exception], ...] | None = None,
+    ) -> bool: ...
+
+    def __call__(
+        self,
+        ctx: T_contra,
+        /,
+        *,
+        trace: bool = False,
+        short_circuit: bool = True,
+        fail_skip: tuple[type[Exception], ...] | None = None,
+    ) -> bool | Trace:
+        """
+        Execute the final predicate.
+        """
+        raise NotImplementedError
+
+    def __and__(
+        self,
+        other: Predicate[T_contra],
+    ) -> Predicate[T_contra]:
+        """
+        Combine this predicate with another using logical AND.
+        """
+        if not is_predicate(other):
+            return NotImplemented
+        return _PredicateAnd(left=self, right=other)
+
+    def __or__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
+        if not is_predicate(other):
+            return NotImplemented
+        return _PredicateOr(left=self, right=other)
+
+    def __invert__(self) -> Predicate[T_contra]:
+        return _PredicateNot(op=self)
+
+
+def predicate(fn: PredicateFn[T_contra], *, desc: str | None = None) -> Predicate[T_contra]:
+    """
+    Create a Predicate from the function.
+    """
+
+    return _PredicateLeaf(fn=fn, desc=desc or fn.__doc__)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+@final
+class _PredicateLeaf(Predicate[T_contra]):
+    """
+    Leaf node in the predicate tree.
+    """
+
+    node_type: Literal["leaf"] = field(default="leaf", init=False)
+    fn: PredicateFn[T_contra]
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+@final
+class _PredicateAnd(Predicate[T_contra]):
+    """
+    Leaf node in the predicate tree.
+    """
+
+    node_type: Literal["and"] = field(default="and", init=False)
+    left: Predicate[T_contra]
+    right: Predicate[T_contra]
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+@final
+class _PredicateOr(Predicate[T_contra]):
+    """
+    Leaf node in the predicate tree.
+    """
+
+    node_type: Literal["or"] = field(default="or", init=False)
+    left: Predicate[T_contra]
+    right: Predicate[T_contra]
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+@final
+class _PredicateNot(Predicate[T_contra]):
+    """
+    Leaf node in the predicate tree.
+    """
+
+    node_type: Literal["not"] = field(default="not", init=False)
+    op: Predicate[T_contra]
+
+
+PredicateNode: TypeAlias = (
+    _PredicateLeaf[T_contra] | _PredicateAnd[T_contra] | _PredicateOr[T_contra] | _PredicateNot[T_contra]
+)
+
+
+def is_predicate(p: Any) -> TypeGuard[Predicate]:  # noqa: ANN401
+    """
+    Check if the given object is a valid predicate.
 
     Args:
-        fn:
-            A function that takes an object of type T and returns a boolean.
+        p: The object to check.
 
     """
 
-    def __init__(self, fn: PredicateFn[T_contra]):
-        self.fn = fn
-
-    def __call__(self, obj: T_contra) -> bool:
-        """
-        Execution Logic.
-        """
-        return self.fn(obj)
-
-    def __and__(self, other: Predicate[T_contra]) -> Self:
-        if not isinstance(other, Predicate):
-            return NotImplemented
-        return self.__class__(lambda x: self(x) and other(x))
-
-    def __or__(self, other: Predicate[T_contra]) -> Self:
-        if not isinstance(other, Predicate):
-            return NotImplemented
-        return self.__class__(lambda x: self(x) or other(x))
-
-    def __invert__(self) -> Self:
-        return self.__class__(lambda x: not self(x))
-
-    # TODO: __repr__ for debug.
+    return isinstance(p, Predicate)

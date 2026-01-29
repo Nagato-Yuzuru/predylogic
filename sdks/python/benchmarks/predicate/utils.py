@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from textwrap import dedent
 
-from predylogic import Predicate as CurrentPredicate
+from predylogic import predicate
 
 from .closure_predicate import Predicate as ClosurePredicate
 
@@ -41,8 +41,8 @@ class ClosureFactory(LogicFactory):
 
 class CurrentFactory(LogicFactory):
     def make_chain(self, depth: int):
-        p = CurrentPredicate(true_fn)
-        other = CurrentPredicate(true_fn)
+        p = predicate(fn=true_fn)
+        other = predicate(fn=true_fn)
         for _ in range(depth - 1):
             p &= other
         return p
