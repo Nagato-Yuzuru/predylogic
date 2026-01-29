@@ -11,7 +11,7 @@ def test_recursion_limit_probe(factory):
     factory_name = type(factory).__name__
 
     # The current mode remains closed.
-    if factory_name in {"ClosureFactory", "CurrentFactory"}:
+    if factory_name == "ClosureFactory":
         with pytest.raises(RecursionError):
             rule("obj")
     else:
