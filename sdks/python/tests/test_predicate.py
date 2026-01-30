@@ -28,7 +28,7 @@ def make_leaf_bool(calls: dict[str, int], key: str, *, value: bool):
         _count(calls, key)
         return value
 
-    return predicate(_fn, desc=key)
+    return predicate(_fn, name=key, desc=key)
 
 
 def make_leaf_raiser(calls: dict[str, int], key: str, exc: Exception):
@@ -38,7 +38,7 @@ def make_leaf_raiser(calls: dict[str, int], key: str, exc: Exception):
         _count(calls, key)
         raise exc
 
-    return predicate(_fn, desc=key)
+    return predicate(_fn, name=key, desc=key)
 
 
 def _flatten_ops(t: Trace) -> list[str]:
@@ -49,8 +49,8 @@ def _flatten_ops(t: Trace) -> list[str]:
 
 
 def test_predicate_combinations():
-    adult = predicate(lambda ctx: ctx["age"] >= 18)
-    active = predicate(lambda ctx: ctx["active"])
+    adult = predicate(lambda ctx: ctx["age"] >= 18, name="adult")
+    active = predicate(lambda ctx: ctx["active"], name="active")
 
     adult_and_active = adult & active
     active_or_adult = active | adult

@@ -59,6 +59,7 @@ class Predicate(Generic[T_contra], ABC):
 
     node_type: PredicateNodeType = field(init=False)
     desc: str | None = field(default=None)
+    name: str | None = field(default=None)
     __compiler_cache: dict[tuple, Callable[[T_contra], Trace | bool]] = field(
         default_factory=dict,
         init=False,
@@ -193,7 +194,7 @@ class Predicate(Generic[T_contra], ABC):
         return _PredicateOr(children=tuple(predicates))
 
 
-def predicate(fn: PredicateFn[T_contra], *, desc: str | None = None) -> Predicate[T_contra]:
+def predicate(fn: PredicateFn[T_contra], *, name: str, desc: str | None = None) -> Predicate[T_contra]:
     """
     Creates and returns a Predicate object from a given predicate function.
 
@@ -202,10 +203,11 @@ def predicate(fn: PredicateFn[T_contra], *, desc: str | None = None) -> Predicat
     function's purpose or behavior and defaults to the function's docstring if not provided.
 
     Args:
-        fn: PredicateFn[T_contra]
+        fn:
             The predicate function to be wrapped. A predicate is a callable that takes
             an input of type T_contra and returns a boolean value.
-        desc: str | None, optional
+        name: name of predicate
+        desc:
             An optional description of the predicate. If not provided, the function's
             docstring will be used as the description.
 
@@ -215,7 +217,7 @@ def predicate(fn: PredicateFn[T_contra], *, desc: str | None = None) -> Predicat
             its associated description.
     """
 
-    return _PredicateLeaf(fn=fn, desc=desc or fn.__doc__)
+    return _PredicateLeaf(fn=fn, desc=desc or fn.__doc__, name=name)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -338,7 +340,7 @@ class Compiler:
                         _trace_cls: type[Trace] = trace_cls,
                     ) -> Trace:
                         res = _leaf.fn(ctx)
-                        return _trace_cls(success=bool(res), operator="PURE_BOOL", node=_leaf, desc=_leaf.desc)
+                        return _trace_cls(success=bool(res), operator="PURE_BOOL", node=_leaf, value=ctx)
 
                     self._context[name] = _wrap
             elif self.fail_skip:
@@ -359,7 +361,7 @@ class Compiler:
                 res = leaf.fn(ctx)
                 if not trace_mode:
                     return res
-                return trace_cls(success=bool(res), operator="PURE_BOOL", node=leaf, desc=leaf.desc)
+                return trace_cls(success=bool(res), operator="PURE_BOOL", node=leaf)
             except fail_skip_excs as e:
                 if not trace_mode:
                     return fallback
@@ -367,7 +369,7 @@ class Compiler:
                     success=fallback,
                     operator="SKIP",
                     node=leaf,
-                    desc=f"Skipped: (Default: {fallback})",
+                    value=ctx,
                     error=e,
                 )
 

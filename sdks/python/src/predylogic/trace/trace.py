@@ -39,33 +39,35 @@ class DefaultTraceStyle(TraceStyle):
 
     def render(self, trace: Trace, level: int = 0) -> str:
         """
-        Default rendering style.
+        Render the trace object into a string representation with a specified indentation level.
         """
-
         indent = "  " * level
 
-        if trace.operator == "SKIP":
-            icon = "⏭️ "
-            status_text = "SKIP"
-        elif trace.success:
-            icon = "✅"
-            status_text = "PASS"
-        else:
-            icon = "❌"
-            status_text = "FAIL"
-
-        if trace.desc:
-            label = trace.desc
+        if trace.node and trace.node.desc:
+            label = trace.node.desc
             if trace.operator in ("and", "or", "not"):
                 label = f"{label} <{trace.operator.upper()}>"
         else:
             label = trace.operator.upper()
 
-        line = f"{indent}{icon}{status_text} {label}"
+        if trace.operator == "SKIP":
+            icon = "⏭️ "
+        elif trace.success:
+            icon = "✅"
+        else:
+            icon = "❌"
+
+        line = f"{indent}{icon} {label}"
+
+        should_show_value = trace.value is not None and (not trace.success or trace.operator == "SKIP")
+
+        if should_show_value:
+            val_indent = "  " * (level + 1)
+            line += f"\n{val_indent}└─ Context: {trace.value!r}"
 
         if trace.error:
-            error_indent = "  " * (level + 1)
-            line += f"\n{error_indent}💥 Error: {trace.error!r}"
+            err_indent = "  " * (level + 1)
+            line += f"\n{err_indent}💥 Error: {trace.error!r}"
 
         lines = [line]
         for child in trace.children:
@@ -85,7 +87,6 @@ class Trace(Generic[T_contra]):
     children: tuple[Trace, ...] = field(default_factory=tuple)
 
     node: Predicate[T_contra] | None = field(default=None, repr=False, compare=False)
-    desc: str | None = field(default=None)
     value: T_contra | None = field(default=None, repr=False)
     error: Exception | None = field(default=None, repr=False)
 

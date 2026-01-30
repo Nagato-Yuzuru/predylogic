@@ -45,6 +45,6 @@ class ClosureFactory(LogicFactory):
 
 class CurrentFactory(LogicFactory):
     def make_chain(self, depth: int):
-        p = predicate(fn=true_fn)
+        p = predicate(fn=true_fn, name="test fn")
         p = Predicate.all([p] * (depth - 1))
         return p

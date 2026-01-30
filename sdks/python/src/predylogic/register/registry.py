@@ -219,9 +219,18 @@ class RuleDefConverter(Generic[T_contra], RuleDecorator[T_contra]):
 
         """
 
+        if self._needs_alias(fn) and self.alias is None:
+            raise RuleDefNotNamedError()
+
+        rule_def_name = self.alias or fn.__name__
+
         @wraps(fn)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Predicate[T_contra]:
-            return predicate(lambda x: fn(x, *args, **kwargs))
+            return predicate(
+                lambda x: fn(x, *args, **kwargs),
+                name=rule_def_name,
+                desc=fn.__doc__ or fn.__name__ or None,
+            )
 
         sig = inspect.signature(fn)
 
@@ -234,11 +243,6 @@ class RuleDefConverter(Generic[T_contra], RuleDecorator[T_contra]):
             parameters=new_params,
             return_annotation=Predicate,
         )
-
-        if self._needs_alias(fn) and self.alias is None:
-            raise RuleDefNotNamedError()
-
-        rule_def_name = self.alias or fn.__name__
 
         if self.registry is not None:
             self.registry._register_predicate_producer(rule_def_name, wrapper)
