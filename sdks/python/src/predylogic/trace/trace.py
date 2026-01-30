@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Generic, Literal, Protocol, TypeVar, overload
 
 if TYPE_CHECKING:
     from predylogic.predicate import Predicate
-    from predylogic.types import LogicBinOp, LogicOp
-
+    from predylogic.types import LogicBinOp, LogicOp, PredicateNodeType
 
 if sys.version_info < (3, 11):
     pass
@@ -83,7 +82,7 @@ class Trace(Generic[T_contra]):
     """
 
     success: bool
-    operator: Literal[LogicOp, "PURE_BOOL", "SKIP"]
+    operator: Literal[PredicateNodeType, "PURE_BOOL", "SKIP"]
     children: tuple[Trace, ...] = field(default_factory=tuple)
 
     node: Predicate[T_contra] | None = field(default=None, repr=False, compare=False)

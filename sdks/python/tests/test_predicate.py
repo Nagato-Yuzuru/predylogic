@@ -78,7 +78,7 @@ def test_call_trace_flag_changes_return_type(calls: dict[str, int]):
     res_trace = p_leaf(ctx, trace=True)
     assert isinstance(res_trace, Trace)
     assert repr(res_trace)
-    assert res_trace.operator == "PURE_BOOL"
+    assert res_trace.operator == "leaf"
     assert res_trace.success is True
 
 
@@ -107,7 +107,7 @@ def test_fail_skip_in_and_context_uses_identity_true(calls: dict[str, int]):
     assert left_t.success is True  # AND identity
     assert isinstance(left_t.error, ValueError)
 
-    assert right_t.operator == "PURE_BOOL"
+    assert right_t.operator == "leaf"
     assert right_t.success is False
 
 
@@ -135,7 +135,7 @@ def test_fail_skip_in_or_context_uses_identity_false(calls: dict[str, int]):
     assert left_t.success is False  # OR identity
     assert isinstance(left_t.error, ValueError)
 
-    assert right_t.operator == "PURE_BOOL"
+    assert right_t.operator == "leaf"
     assert right_t.success is True
 
 

@@ -1,4 +1,3 @@
-# ruff: noqa: C901
 from __future__ import annotations
 
 import ast
@@ -340,7 +339,7 @@ class Compiler:
                         _trace_cls: type[Trace] = trace_cls,
                     ) -> Trace:
                         res = _leaf.fn(ctx)
-                        return _trace_cls(success=bool(res), operator="PURE_BOOL", node=_leaf, value=ctx)
+                        return _trace_cls(success=bool(res), operator="leaf", node=_leaf)
 
                     self._context[name] = _wrap
             elif self.fail_skip:
@@ -361,7 +360,7 @@ class Compiler:
                 res = leaf.fn(ctx)
                 if not trace_mode:
                     return res
-                return trace_cls(success=bool(res), operator="PURE_BOOL", node=leaf)
+                return trace_cls(success=bool(res), operator="leaf", node=leaf)
             except fail_skip_excs as e:
                 if not trace_mode:
                     return fallback
@@ -524,7 +523,7 @@ class Compiler:
         return ast.Call(func=ast.Name(id=func_name, ctx=ast.Load()), args=args, keywords=[])
 
     # noinspection D
-    def _inject_trace_helpers(self):
+    def _inject_trace_helpers(self):  # noqa: C901
         self._context["Trace"] = Trace
 
         if self.short_circuit:
