@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast
 from abc import ABC
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -21,12 +21,16 @@ from typing import (
 )
 
 from predylogic.trace.trace import Trace
+from predylogic.types import LogicBinOp
 
 if TYPE_CHECKING:
-    from predylogic.types import LogicBinOp, PredicateNodeType
+    from collections.abc import Iterable, Sequence
+
+    from predylogic.types import PredicateNodeType
 
 T_contra = TypeVar("T_contra", contravariant=True)
 
+FLATTENED_TUPLE: TypeAlias = tuple[Literal["FLATTENED"], LogicBinOp, int]
 PredicateFn = Callable[[T_contra], bool]
 
 COMPILED_PREDICATE = "_compiled_predicate"
@@ -109,6 +113,40 @@ class Predicate(Generic[T_contra], ABC):
 
     def __invert__(self) -> Predicate[T_contra]:
         return _PredicateNot(op=self)
+
+    @classmethod
+    def all(cls, predicates: Sequence[Predicate[T_contra]]) -> Predicate[T_contra]:
+        """
+        Use the function to add multiple predicates simultaneously within an `and` logical operation,
+            thereby avoiding the object creation overhead associated with chained calls.
+
+        Args:
+            predicates: Predicates are combined sequentially using `and`.
+
+        """
+        if not predicates:
+            msg = "Expected at least one predicate"
+            raise ValueError(msg)
+        if len(predicates) == 1:
+            return predicates[0]
+        return _PredicateAnd(children=tuple(predicates))
+
+    @classmethod
+    def any(cls, predicates: Sequence[Predicate[T_contra]]) -> Predicate[T_contra]:
+        """
+        Use the function to add multiple predicates simultaneously within an `or` logical operation,
+            thereby avoiding the object creation overhead associated with chained calls.
+
+        Args:
+            predicates: Predicates are combined sequentially using `or`.
+
+        """
+        if not predicates:
+            msg = "Expected at least one predicate"
+            raise ValueError(msg)
+        if len(predicates) == 1:
+            return predicates[0]
+        return _PredicateOr(children=tuple(predicates))
 
 
 def predicate(fn: PredicateFn[T_contra], *, desc: str | None = None) -> Predicate[T_contra]:
@@ -293,7 +331,7 @@ class Compiler:
         Represents a stack entry for predicate compilation.
         """
 
-        node: Predicate | tuple[Literal["FLATTENED"], LogicBinOp, int]
+        node: Predicate | FLATTENED_TUPLE
         visited: bool
         fallback: bool
 
@@ -314,7 +352,7 @@ class Compiler:
 
         while stack:
             node, visited, fallback = stack.pop()
-            node = cast("PredicateNode", node)
+            node = cast("PredicateNode | FLATTENED_TUPLE", node)
             if isinstance(node, tuple) and node[0] == "FLATTENED":
                 _, op_type, count = node
                 child_exprs = results[-count:]
@@ -343,6 +381,8 @@ class Compiler:
                     case _PredicateNot(op=op):
                         # Reversing the outer layer's expectations.
                         stack.append((op, False, not fallback))
+                    case tuple():
+                        pass
                     case _:
                         assert_never(node)
             else:
