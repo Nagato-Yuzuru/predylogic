@@ -75,7 +75,7 @@ registry = Registry[UserCtx]("my_first_registry")
 
 # 3. Define Atomic Predicates
 @registry.rule_def()
-def is_adult(ctx: UserCtx, threshold: int = 18) -> bool:
+def is_age_over_threshold(ctx: UserCtx, threshold: int = 18) -> bool:
     return ctx["age"] >= threshold
 
 
@@ -86,7 +86,7 @@ def has_role(ctx: UserCtx, role: str) -> bool:
 
 # 4. Compose Logic (Deferred Execution)
 # This creates a rule object, it does not execute yet.
-access_policy = is_adult(18) & has_role("admin")
+access_policy = is_age_over_threshold(18) & has_role("admin")
 
 # 5. Execute
 user = {"age": 20, "is_active": True, "role": "admin"}
@@ -99,7 +99,5 @@ assert access_policy(user) is True
 - [ ] v0.0.1 (Current): Core predicate logic, registry system, and type-safe rule definitions.
 
 - [ ] v0.0.2: Schema generation and JSON-based configuration builder.
-
-- [ ] v0.0.3: CLI tools for exporting logic schemas and validation.
 
 - [ ] v0.1.0: First stable release.
