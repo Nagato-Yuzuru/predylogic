@@ -8,5 +8,5 @@ trade-offs, and performance considerations.
 We use ADRs to document significant architectural changes.
 
 * [ADR 001: Evaluation Engine Migration](adr/001_evaluation_engine.md) - Why we moved from Recursive Closures
-  to an
-  Iterative AST Engine.
+  to an Iterative AST Engine.
+* [ADR 002: AST compiler optimization](adr/002_AST_compiler_optimization.md) - What attempts have we made?

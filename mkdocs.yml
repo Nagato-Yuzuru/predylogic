@@ -12,8 +12,8 @@ nav:
   - Modules: modules.md
   - Design:
       - Overview: design/index.md
-      - Architecture Decisions:
-          - "ADR 001: Evaluation Engine": design/adr/001_evaluation_engine.md
+#      - Architecture Decisions:
+#          - "ADR 001: Evaluation Engine": design/adr/001_evaluation_engine.md
 plugins:
   - search
   - mkdocstrings:
