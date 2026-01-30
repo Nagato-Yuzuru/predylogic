@@ -1,3 +1,13 @@
-from .predicate import Predicate, PredicateFn
+from .predicate import (
+    Predicate,
+    PredicateFn,
+    is_predicate,
+    predicate,
+)
 
-__all__ = ["Predicate", "PredicateFn"]
+__all__ = [
+    "Predicate",
+    "PredicateFn",
+    "is_predicate",
+    "predicate",
+]

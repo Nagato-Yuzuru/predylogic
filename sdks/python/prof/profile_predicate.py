@@ -9,7 +9,7 @@ import contextlib
 import sys
 import time
 
-from benchmarks.predicate.utils import ClosureFactory, LogicFactory
+from benchmarks.predicate.utils import ClosureFactory, CurrentFactory, LogicFactory
 
 
 def run_workload(factory: LogicFactory, depth: int, iterations: int):
@@ -26,17 +26,12 @@ def main():
     parser = argparse.ArgumentParser(description="Profile predicate logic")
     parser.add_argument("--depth", type=int, default=1500, help="Recursion depth (default: 1500)")
     parser.add_argument("--iter", type=int, default=1000, help="Number of execution iterations")
-    parser.add_argument("--mode", choices=["closure"], default="closure", help="Engine mode")
+    parser.add_argument("--mode", choices=["closure", "current"], default="closure", help="Engine mode")
 
     args = parser.parse_args()
     sys.setrecursionlimit(max(sys.getrecursionlimit(), args.depth + 500))
 
-    if args.mode == "closure":
-        factory = ClosureFactory()
-
-    else:
-        msg = f"Unknown mode {args.mode}."
-        raise ValueError(msg)
+    factory = ClosureFactory() if args.mode == "closure" else CurrentFactory()
 
     print(f"Starting Profile: Mode={args.mode}, Depth={args.depth}")
 

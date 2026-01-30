@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
 from textwrap import dedent
 
-from predylogic import Predicate as CurrentPredicate
+from predylogic import Predicate, predicate
 
 from .closure_predicate import Predicate as ClosurePredicate
 
 
 def true_fn(_):
     return True
+
+
+def false_fn(_):
+    return False
 
 
 def make_naive_chain(depth: int):
@@ -41,8 +45,6 @@ class ClosureFactory(LogicFactory):
 
 class CurrentFactory(LogicFactory):
     def make_chain(self, depth: int):
-        p = CurrentPredicate(true_fn)
-        other = CurrentPredicate(true_fn)
-        for _ in range(depth - 1):
-            p &= other
+        p = predicate(fn=true_fn)
+        p = Predicate.all([p] * (depth - 1))
         return p

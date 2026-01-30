@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from predylogic.predicate import Predicate
+from predylogic import is_predicate
 from predylogic.register.errs import RegistryNameConflictError, RuleDefConflictError, RuleDefNotNamedError
 from predylogic.register.registry import Registry, RegistryManager
 
@@ -35,7 +35,7 @@ def test_register_named_function(registry: Registry[User]):
     assert registry["is_adult"] is predicate_producer
 
     predicate = predicate_producer()
-    assert isinstance(predicate, Predicate)
+    assert is_predicate(predicate)
     assert predicate(User(age=20, active=True))
     assert not predicate(User(age=16, active=True))
 
@@ -53,9 +53,9 @@ def test_register_with_alias(registry: Registry[User]):
 def test_register_lambda_with_alias(registry: Registry[User]):
     predicate_producer = registry.register(lambda user, age: user.age > age, "is_older_than")
     assert "is_older_than" in registry
-    predicate = predicate_producer(25)
-    assert predicate(User(age=30, active=True))
-    assert not predicate(User(age=20, active=True))
+    p = predicate_producer(25)
+    assert p(User(age=30, active=True))
+    assert not p(User(age=20, active=True))
 
 
 def test_register_lambda_without_alias_raises_error(registry: Registry[User]):
@@ -78,10 +78,10 @@ def test_rule_def_decorator(registry: Registry[User]):
         return user.active
 
     assert "is_active" in registry
-    predicate = is_active()
-    assert isinstance(predicate, Predicate)
-    assert predicate(User(age=20, active=True))
-    assert not predicate(User(age=20, active=False))
+    p = is_active()
+    assert is_predicate(p)
+    assert p(User(age=20, active=True))
+    assert not p(User(age=20, active=False))
 
 
 def test_rule_def_decorator_with_alias(registry: Registry[User]):
