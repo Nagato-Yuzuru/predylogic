@@ -288,17 +288,25 @@ class Compiler:
         chain = []
         current = node
 
-        while isinstance(current, (_PredicateOr, _PredicateAnd)) and current.node_type == node_type:
-            # handle right children
-            if len(current.children) == 2:  # noqa: PLR2004
-                chain.append(current.children[1])
-                current = current.children[0]
-            else:
-                chain.extend(reversed(current.children))
+        while True:
+            if current.node_type != node_type:
                 break
-        if not (isinstance(current, (_PredicateAnd, _PredicateOr)) and current.node_type == node_type):
-            chain.append(current)
+            current = cast("_PredicateAnd | _PredicateOr", current)
 
+            children = current.children
+
+            if len(children) == 2:  # noqa: PLR2004
+                # collect left first
+                current = children[0]
+                chain.append(children[1])
+            else:
+                # N-ary back (Mixed mode)
+                if not children:
+                    break
+                chain.extend(children[1:])
+                current = children[0]
+
+        chain.append(current)
         return reversed(chain)
 
     def _fix_locations_iterative(self, root: ast.AST) -> None:
