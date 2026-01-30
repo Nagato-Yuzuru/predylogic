@@ -41,7 +41,14 @@ RT_AND = "_rt_and"
 @dataclass(frozen=True, kw_only=True)
 class Predicate(Generic[T_contra], ABC):
     """
-    Base class for predicate nodes in the predicate tree.
+    Represents a base class for predicates with logical operations
+    and evaluation on a given context.
+
+    This class defines the foundation for creating and combining predicates
+    that can evaluate certain conditions in a provided context. It also
+    supports logical operations such as AND, OR, and NOT for building
+    complex predicate expressions.
+
     """
 
     node_type: PredicateNodeType = field(init=False)
@@ -86,8 +93,24 @@ class Predicate(Generic[T_contra], ABC):
         fail_skip: tuple[type[Exception], ...] | None = None,
     ) -> bool | Trace:
         """
-        Execute the final predicate.
+        Executes the callable object using the provided context and optional parameters to
+        control execution behavior and error handling.
+
+        Args:
+            ctx: The context that is passed into the callable object during execution.
+            trace: Specifies whether to enable tracing of execution for debugging or
+                monitoring purposes. Defaults to False.
+            short_circuit: Determines whether the execution should stop immediately upon
+                encountering a failure. Defaults to True.
+            fail_skip: A tuple of exception types to be skipped or ignored during execution.
+                If provided, these exceptions will not disrupt the execution's flow. Defaults
+                to None.
+
+        Returns:
+            Either a boolean indicating the success or failure of the operation, or a
+            Trace object that contains detailed execution history if tracing is enabled.
         """
+
         cache_key = (trace, short_circuit, fail_skip)
         runner = self.__compiler_cache.get(cache_key)
         if not runner:
@@ -101,17 +124,31 @@ class Predicate(Generic[T_contra], ABC):
     ) -> Predicate[T_contra]:
         """
         Combine this predicate with another using logical AND.
+
+        To create a large number of consecutive __and__ combinations,
+        the `Predicate.and` method should be used to avoid the overhead of creating additional objects.
         """
         if not is_predicate(other):
             return NotImplemented
         return _PredicateAnd(children=(self, other))
 
     def __or__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
+        """
+        Combine this predicate with another using logical or.
+
+        To create a large number of consecutive __or__ combinations,
+        the `Predicate.any` method should be used to avoid the overhead of creating additional objects.
+        """
+
         if not is_predicate(other):
             return NotImplemented
         return _PredicateOr(children=(self, other))
 
     def __invert__(self) -> Predicate[T_contra]:
+        """
+        Combine this predicate with another using logical or.
+        """
+
         return _PredicateNot(op=self)
 
     @classmethod
@@ -151,7 +188,24 @@ class Predicate(Generic[T_contra], ABC):
 
 def predicate(fn: PredicateFn[T_contra], *, desc: str | None = None) -> Predicate[T_contra]:
     """
-    Create a Predicate from the function.
+    Creates and returns a Predicate object from a given predicate function.
+
+    This function allows you to wrap a predicate function in a Predicate object with
+    an optional descriptive string. The descriptive string can be used to annotate the
+    function's purpose or behavior and defaults to the function's docstring if not provided.
+
+    Args:
+        fn: PredicateFn[T_contra]
+            The predicate function to be wrapped. A predicate is a callable that takes
+            an input of type T_contra and returns a boolean value.
+        desc: str | None, optional
+            An optional description of the predicate. If not provided, the function's
+            docstring will be used as the description.
+
+    Returns:
+        Predicate[T_contra]
+            A Predicate instance that encapsulates the provided predicate function and
+            its associated description.
     """
 
     return _PredicateLeaf(fn=fn, desc=desc or fn.__doc__)
