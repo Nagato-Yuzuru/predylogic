@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import sys
 from abc import ABC
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -14,7 +15,6 @@ from typing import (
     TypeAlias,
     TypeGuard,
     TypeVar,
-    assert_never,
     cast,
     final,
     overload,
@@ -22,6 +22,11 @@ from typing import (
 
 from predylogic.trace.trace import Trace
 from predylogic.types import LogicBinOp
+
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -476,6 +481,7 @@ class Compiler:
             name=COMPILED_PREDICATE,
             args=ast.arguments(posonlyargs=[], args=[ast.arg(arg="ctx")], kwonlyargs=[], defaults=[], kw_defaults=[]),
             body=[ast.Return(value=body_expr)],
+            decorator_list=[],
         )
         module = ast.Module(body=[func_def], type_ignores=[])
 

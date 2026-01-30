@@ -24,7 +24,7 @@ keywords = [
   "policy-engine",
 ]
 
-dependencies = []
+dependencies = ["typing-extensions>=4.15.0"]
 description = "An embedded, composable schema-driven predicate logic engine."
 dynamic = ["version"]
 license-files = ["LICENSE"]
