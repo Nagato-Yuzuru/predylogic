@@ -81,8 +81,8 @@ class Trace(Generic[T_contra]):
     """
 
     success: bool
-    operator: Literal[LogicOp, "PRUE_BOOL", "SKIP"]
-    children: tuple[Trace, ...] = field(default_factory=list)
+    operator: Literal[LogicOp, "PURE_BOOL", "SKIP"]
+    children: tuple[Trace, ...] = field(default_factory=tuple)
 
     node: Predicate[T_contra] | None = field(default=None, repr=False, compare=False)
     desc: str | None = field(default=None)
@@ -126,7 +126,7 @@ class Trace(Generic[T_contra]):
     def __logic_help(self, op: LogicOp, other: Trace | bool | None) -> Trace:  # noqa: FBT001
         if op != "not":
             if isinstance(other, bool):
-                other_trace = Trace(success=other, operator="PRUE_BOOL")
+                other_trace = Trace(success=other, operator="PURE_BOOL")
             elif isinstance(other, Trace):
                 other_trace = other
             else:

@@ -6,6 +6,7 @@ import sys
 from abc import ABC
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from threading import RLock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -65,6 +66,7 @@ class Predicate(Generic[T_contra], ABC):
         hash=False,
         compare=False,
     )
+    __lock: RLock = field(default_factory=RLock, init=False, repr=False, hash=False, compare=False)
 
     @overload
     def __call__(
@@ -118,8 +120,9 @@ class Predicate(Generic[T_contra], ABC):
         cache_key = (trace, short_circuit, fail_skip)
         runner = self.__compiler_cache.get(cache_key)
         if not runner:
-            runner = Compiler(trace=trace, short_circuit=short_circuit, fail_skip=fail_skip).compile(self)
-            self.__compiler_cache[cache_key] = runner
+            with self.__lock:
+                runner = Compiler(trace=trace, short_circuit=short_circuit, fail_skip=fail_skip).compile(self)
+                self.__compiler_cache[cache_key] = runner
         return runner(ctx)
 
     def __and__(
@@ -130,7 +133,7 @@ class Predicate(Generic[T_contra], ABC):
         Combine this predicate with another using logical AND.
 
         To create a large number of consecutive __and__ combinations,
-        the `Predicate.and` method should be used to avoid the overhead of creating additional objects.
+        the `Predicate.all` method should be used to avoid the overhead of creating additional objects.
         """
         if not is_predicate(other):
             return NotImplemented
@@ -150,7 +153,7 @@ class Predicate(Generic[T_contra], ABC):
 
     def __invert__(self) -> Predicate[T_contra]:
         """
-        Combine this predicate with another using logical or.
+        Combine this predicate with another using logical not.
         """
 
         return _PredicateNot(op=self)
@@ -158,7 +161,7 @@ class Predicate(Generic[T_contra], ABC):
     @classmethod
     def all(cls, predicates: Sequence[Predicate[T_contra]]) -> Predicate[T_contra]:
         """
-        Use the function to add multiple predicates simultaneously within an `and` logical operation,
+        Use this method to combine multiple predicates,
             thereby avoiding the object creation overhead associated with chained calls.
 
         Args:
@@ -175,7 +178,7 @@ class Predicate(Generic[T_contra], ABC):
     @classmethod
     def any(cls, predicates: Sequence[Predicate[T_contra]]) -> Predicate[T_contra]:
         """
-        Use the function to add multiple predicates simultaneously within an `or` logical operation,
+        Use this method to combine multiple predicates,
             thereby avoiding the object creation overhead associated with chained calls.
 
         Args:
@@ -230,7 +233,7 @@ class _PredicateLeaf(Predicate[T_contra]):
 @final
 class _PredicateAnd(Predicate[T_contra]):
     """
-    Leaf node in the predicate tree.
+    And node in the predicate tree.
     """
 
     node_type: Literal["and"] = field(default="and", init=False)
@@ -241,17 +244,26 @@ class _PredicateAnd(Predicate[T_contra]):
             return NotImplemented
         return _PredicateAnd(children=(self, other))
 
+    # def __post_init__(self):
+    #     if len(self.children) <= 2:
+    #         msg = "Too few children for AND predicate"
+    #         raise ValueError(msg)
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 @final
 class _PredicateOr(Predicate[T_contra]):
     """
-    Leaf node in the predicate tree.
+    Or node in the predicate tree.
     """
 
     node_type: Literal["or"] = field(default="or", init=False)
     children: tuple[Predicate[T_contra], ...]
 
+    # def __post_init__(self):
+    #     if len(self.children) <= 2:
+    #         msg = "Too few children for OR predicate"
+    #         raise ValueError(msg)
     def __or__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
         if not is_predicate(other):
             return NotImplemented
@@ -262,7 +274,7 @@ class _PredicateOr(Predicate[T_contra]):
 @final
 class _PredicateNot(Predicate[T_contra]):
     """
-    Leaf node in the predicate tree.
+    Not node in the predicate tree.
     """
 
     node_type: Literal["not"] = field(default="not", init=False)
@@ -314,7 +326,7 @@ class Compiler:
             self._leaf_map[cache_key] = name
 
             if self.trace:
-                # In trace mode, leaf must return Trace. We always wrap raw booleans.
+                # In trace mode, the leaf must return Trace. We always wrap raw booleans.
                 if self.fail_skip:
                     self._context[name] = self._wrap_with_fail_skip(leaf, fallback)
                 else:
@@ -326,7 +338,7 @@ class Compiler:
                         _trace_cls: type[Trace] = trace_cls,
                     ) -> Trace:
                         res = _leaf.fn(ctx)
-                        return _trace_cls(success=bool(res), operator="PRUE_BOOL", node=_leaf, desc=_leaf.desc)
+                        return _trace_cls(success=bool(res), operator="PURE_BOOL", node=_leaf, desc=_leaf.desc)
 
                     self._context[name] = _wrap
             elif self.fail_skip:
@@ -347,7 +359,7 @@ class Compiler:
                 res = leaf.fn(ctx)
                 if not trace_mode:
                     return res
-                return trace_cls(success=bool(res), operator="PRUE_BOOL", node=leaf, desc=leaf.desc)
+                return trace_cls(success=bool(res), operator="PURE_BOOL", node=leaf, desc=leaf.desc)
             except fail_skip_excs as e:
                 if not trace_mode:
                     return fallback

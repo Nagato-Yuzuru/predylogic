@@ -77,7 +77,8 @@ def test_call_trace_flag_changes_return_type(calls: dict[str, int]):
     p_leaf = make_leaf_bool(calls, "p_leaf", value=True)
     res_trace = p_leaf(ctx, trace=True)
     assert isinstance(res_trace, Trace)
-    assert res_trace.operator == "PRUE_BOOL"
+    assert repr(res_trace)
+    assert res_trace.operator == "PURE_BOOL"
     assert res_trace.success is True
 
 
@@ -94,6 +95,7 @@ def test_fail_skip_in_and_context_uses_identity_true(calls: dict[str, int]):
 
     res = p(ctx, trace=True, fail_skip=(ValueError,), short_circuit=False)
     assert isinstance(res, Trace)
+    assert repr(res)
     assert res.operator == "and"
     assert res.success is False
     assert len(res.children) == 2
@@ -105,7 +107,7 @@ def test_fail_skip_in_and_context_uses_identity_true(calls: dict[str, int]):
     assert left_t.success is True  # AND identity
     assert isinstance(left_t.error, ValueError)
 
-    assert right_t.operator == "PRUE_BOOL"
+    assert right_t.operator == "PURE_BOOL"
     assert right_t.success is False
 
 
@@ -122,6 +124,7 @@ def test_fail_skip_in_or_context_uses_identity_false(calls: dict[str, int]):
 
     res = p(ctx, trace=True, fail_skip=(ValueError,), short_circuit=False)
     assert isinstance(res, Trace)
+    assert repr(res)
     assert res.operator == "or"
     assert res.success is True
     assert len(res.children) == 2
@@ -132,7 +135,7 @@ def test_fail_skip_in_or_context_uses_identity_false(calls: dict[str, int]):
     assert left_t.success is False  # OR identity
     assert isinstance(left_t.error, ValueError)
 
-    assert right_t.operator == "PRUE_BOOL"
+    assert right_t.operator == "PURE_BOOL"
     assert right_t.success is True
 
 
@@ -155,6 +158,7 @@ def test_trace_short_circuit_controls_collection_for_and(calls: dict[str, int]):
 
     res_full = p(ctx, trace=True, short_circuit=False)
     assert isinstance(res_full, Trace)
+    assert repr(res_full)
     assert res_full.operator == "and"
     assert res_full.success is False
     assert calls.get("first", 0) == 1
@@ -171,6 +175,7 @@ def test_trace_short_circuit_controls_collection_for_or(calls: dict[str, int]):
 
     res_sc = p(ctx, trace=True, short_circuit=True)
     assert isinstance(res_sc, Trace)
+    assert repr(res_sc)
     assert res_sc.operator == "or"
     assert res_sc.success is True
     assert calls.get("first", 0) == 1
@@ -181,6 +186,7 @@ def test_trace_short_circuit_controls_collection_for_or(calls: dict[str, int]):
 
     res_full = p(ctx, trace=True, short_circuit=False)
     assert isinstance(res_full, Trace)
+    assert repr(res_full)
     assert res_full.operator == "or"
     assert res_full.success is True
     assert calls.get("first", 0) == 1
