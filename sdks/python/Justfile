@@ -29,6 +29,8 @@ build: clean-build
     @echo "Creating wheel file"
     uvx --from build pyproject-build --installer uv
 
+publish:
+    uv publish
 # Clean build artifacts
 clean-build:
     @echo "Removing build artifacts"

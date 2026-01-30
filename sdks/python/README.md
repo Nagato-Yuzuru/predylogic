@@ -148,11 +148,6 @@ It provides the flexibility of a rule engine with the performance of native code
    > NOTE: The trace functionality is currently undergoing iteration. Additional information will be incorporated.
    > You can customize the `TraceStyle` to fit your logging system.
 
-## Roadmap
-
--[x] v0.0.1 (Current): Core predicate logic, registry system, and type-safe rule definitions.
--[ ] v0.0.2: Schema generation and JSON-based configuration builder.
--[ ] v0.1.0: First stable release.
 
 ## Under the Hood: The Engineering
 

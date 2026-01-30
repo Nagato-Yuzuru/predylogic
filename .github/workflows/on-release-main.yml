@@ -23,10 +23,10 @@ jobs:
         uses: ./.github/actions/setup-python-env
 
       - name: Build package
-        run: uv build
+        run: just py-build
 
       - name: Publish package
-        run: uv publish
+        run: just py-publish
   github-release:
     name: Create GitHub Release
     needs: pypi-publish

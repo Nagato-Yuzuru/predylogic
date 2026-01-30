@@ -29,6 +29,8 @@ PY_SDK_PATH := "./sdks/python"
 @py-build:
     just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile build
 
+@py-publish:
+    just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile publish
 # Test if documentation of python can be built without warnings or errors
 docs-test:
     uv run --project={{PY_SDK_PATH}} mkdocs build -s

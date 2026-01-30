@@ -7,13 +7,14 @@ filter_unconventional = true
 split_commits = false
 
 commit_parsers = [
+  { message = "^test", group = "Testing", skip = true },
+  { message = "^ci", group = "CI", skip = true },
+  { message = "^chore", group = "Miscellaneous", skip = true },
+  { message = "^refactor", group = "🚜 Refactor & Architecture" },
+  { message = "^perf", group = "⚡ Performance Optimizations" },
   { message = "^feat", group = "🚀 Features" },
   { message = "^fix", group = "🐛 Bug Fixes" },
   { message = "^doc", group = "📚 Documentation" },
-  { message = "^perf", group = "⚡ Performance" },
-  { message = "^refactor", group = "🚜 Refactor" },
-  { message = "^test", group = "🧪 Testing" },
-  { message = "^chore", group = "⚙️ Miscellaneous Tasks" },
 ]
 
 [changelog]

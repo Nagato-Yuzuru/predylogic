@@ -1,1 +1,1 @@
-../README.md
+../sdks/python/README.md
