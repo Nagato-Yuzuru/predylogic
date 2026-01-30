@@ -1,15 +1,16 @@
-# ruff: noqa: PLR0912, C901
+# ruff: noqa: C901
 from __future__ import annotations
 
 import ast
 from abc import ABC
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
     Literal,
+    NamedTuple,
     TypeAlias,
     TypeGuard,
     TypeVar,
@@ -22,7 +23,7 @@ from typing import (
 from predylogic.trace.trace import Trace
 
 if TYPE_CHECKING:
-    from predylogic.types import PredicateNodeType
+    from predylogic.types import LogicBinOp, PredicateNodeType
 
 T_contra = TypeVar("T_contra", contravariant=True)
 
@@ -140,12 +141,9 @@ class _PredicateAnd(Predicate[T_contra]):
     children: tuple[Predicate[T_contra], ...]
 
     def __and__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
-        children = list(self.children)
-        if isinstance(other, _PredicateAnd):
-            children.extend(other.children)  # ty:ignore[invalid-argument-type]
-        else:
-            children.append(other)
-        return _PredicateAnd(children=tuple(children))
+        if not is_predicate(other):
+            return NotImplemented
+        return _PredicateAnd(children=(self, other))
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -159,12 +157,9 @@ class _PredicateOr(Predicate[T_contra]):
     children: tuple[Predicate[T_contra], ...]
 
     def __or__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
-        children = list(self.children)
-        if isinstance(other, _PredicateOr):
-            children.extend(other.children)  # ty:ignore[invalid-argument-type]
-        else:
-            children.append(other)
-        return _PredicateOr(children=tuple(children))
+        if not is_predicate(other):
+            return NotImplemented
+        return _PredicateOr(children=(self, other))
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -251,6 +246,23 @@ class Compiler:
 
         return wrapper
 
+    def _collect_chain(self, node: Predicate[T_contra], node_type: LogicBinOp) -> Iterable[Predicate]:
+        chain = []
+        current = node
+
+        while isinstance(current, (_PredicateOr, _PredicateAnd)) and current.node_type == node_type:
+            # handle right children
+            if len(current.children) == 2:  # noqa: PLR2004
+                chain.append(current.children[1])
+                current = current.children[0]
+            else:
+                chain.extend(reversed(current.children))
+                break
+        if not (isinstance(current, (_PredicateAnd, _PredicateOr)) and current.node_type == node_type):
+            chain.append(current)
+
+        return reversed(chain)
+
     def _fix_locations_iterative(self, root: ast.AST) -> None:
         """
         Iterative implementation of ast.fix_missing_locations.
@@ -276,6 +288,15 @@ class Compiler:
             keywords=[],
         )
 
+    class CompileStack(NamedTuple):
+        """
+        Represents a stack entry for predicate compilation.
+        """
+
+        node: Predicate | tuple[Literal["FLATTENED"], LogicBinOp, int]
+        visited: bool
+        fallback: bool
+
     # noinspection D
     def compile(  # noqa: D102
         self,
@@ -288,22 +309,37 @@ class Compiler:
         process_not = self._process_not_trace if self.trace else self._process_not_bool
         process_binary = self._process_binary_trace if self.trace else self._process_binary_bool
 
-        stack = [(p, False, self.root_fallback)]
+        stack = [self.CompileStack(p, visited=False, fallback=self.root_fallback)]
         results: list[ast.expr] = []
 
         while stack:
             node, visited, fallback = stack.pop()
             node = cast("PredicateNode", node)
+            if isinstance(node, tuple) and node[0] == "FLATTENED":
+                _, op_type, count = node
+                child_exprs = results[-count:]
+                results[-count:] = []
+
+                results.append(process_binary(op_type, child_exprs))
+                continue
 
             if not visited:
                 stack.append((node, True, fallback))
                 match node:
                     case _PredicateLeaf() as p:
                         results.append(self._create_ast_leaf(p, fallback))
-                    case _PredicateAnd(children=children):
-                        stack.extend((child, False, True) for child in reversed(children))
-                    case _PredicateOr(children=children):
-                        stack.extend((child, False, False) for child in reversed(children))
+                    case (
+                        _PredicateAnd(node_type=node_type, children=children)
+                        | _PredicateOr(node_type=node_type, children=children)
+                    ):
+                        flat_tuple = ("FLATTENED", node_type, len(children))
+                        chain = self._collect_chain(node, node_type)
+                        stack.append(self.CompileStack(flat_tuple, visited=False, fallback=fallback))
+
+                        child_fallback = node_type != "or"
+                        for child in chain:
+                            stack.append((child, False, child_fallback))
+
                     case _PredicateNot(op=op):
                         # Reversing the outer layer's expectations.
                         stack.append((op, False, not fallback))
@@ -314,16 +350,6 @@ class Compiler:
                     case _PredicateNot():
                         child_expr = results.pop()
                         results.append(process_not(child_expr))
-                    case _PredicateAnd() | _PredicateOr() as p:
-                        num_children = len(p.children)
-                        if num_children:
-                            child_exprs = results[-num_children:]
-                            results[-num_children:] = []
-                        else:
-                            # When is empty?
-                            child_exprs = []
-
-                        results.append(process_binary(p, child_exprs))
 
         body_expr = results.pop()
         func_def = ast.FunctionDef(
@@ -406,11 +432,11 @@ class Compiler:
 
     def _process_binary_trace(
         self,
-        node: _PredicateAnd | _PredicateOr,
+        node_type: LogicBinOp,
         child_exprs: list[ast.expr],
     ) -> ast.Call:
         """Process AND/OR in trace mode (lazy evaluation with helpers)."""
-        helper_name = RT_AND if node.node_type == "and" else RT_OR
+        helper_name = RT_AND if node_type == "and" else RT_OR
         return self._build_lazy_trace_call(helper_name, child_exprs)
 
     @staticmethod
@@ -420,9 +446,9 @@ class Compiler:
 
     def _process_binary_bool(
         self,
-        node: _PredicateAnd | _PredicateOr,
+        node: LogicBinOp,
         child_exprs: list[ast.expr],
     ) -> ast.BoolOp:
         """Process AND/OR in bool mode (native short-circuit)."""
-        op = ast.And() if node.node_type == "and" else ast.Or()
+        op = ast.And() if node == "and" else ast.Or()
         return ast.BoolOp(op=op, values=child_exprs)

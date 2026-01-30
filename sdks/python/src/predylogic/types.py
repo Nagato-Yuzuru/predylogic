@@ -8,8 +8,9 @@ RuleParams = ParamSpec("RuleParams")
 
 RuleDef: TypeAlias = Callable[Concatenate[RunCtx_contra, RuleParams], bool]
 
-LogicOp: TypeAlias = Literal["not", "and", "or"]
+LogicBinOp: TypeAlias = Literal["and", "or"]
+LogicOp: TypeAlias = Literal["not", LogicBinOp]
 
 PredicateNodeType: TypeAlias = Literal["leaf", LogicOp]
 
-__all__ = ["LogicOp", "PredicateNodeType", "RuleDef"]
+__all__ = ["LogicBinOp", "LogicOp", "PredicateNodeType", "RuleDef"]

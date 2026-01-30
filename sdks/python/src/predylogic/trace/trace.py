@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic, Literal, Protocol, TypeVar, overload
 
 if TYPE_CHECKING:
     from predylogic.predicate import Predicate
-    from predylogic.types import LogicOp
+    from predylogic.types import LogicBinOp, LogicOp
 
 
 if sys.version_info < (3, 11):
@@ -80,7 +80,7 @@ class Trace(Generic[T_contra]):
     @overload
     def __logic_help(
         self,
-        op: Literal["and", "or"],
+        op: LogicBinOp,
         other: Trace | bool,  # noqa: FBT001
     ) -> Trace: ...
 
