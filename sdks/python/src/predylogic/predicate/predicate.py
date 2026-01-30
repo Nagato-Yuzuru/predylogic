@@ -1,4 +1,3 @@
-# ruff: noqa: C901
 from __future__ import annotations
 
 import ast
@@ -522,7 +521,7 @@ class Compiler:
         return ast.Call(func=ast.Name(id=func_name, ctx=ast.Load()), args=args, keywords=[])
 
     # noinspection D
-    def _inject_trace_helpers(self):
+    def _inject_trace_helpers(self):  # noqa: C901
         self._context["Trace"] = Trace
 
         if self.short_circuit:
