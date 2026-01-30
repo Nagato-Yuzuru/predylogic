@@ -37,8 +37,41 @@ class DefaultTraceStyle(TraceStyle):
     Default trace style implementation.
     """
 
-    # TODO: based on the style of the terminal.
-    ...
+    def render(self, trace: Trace, level: int = 0) -> str:
+        """
+        Default rendering style.
+        """
+
+        indent = "  " * level
+
+        if trace.operator == "SKIP":
+            icon = "⏭️ "
+            status_text = "SKIP"
+        elif trace.success:
+            icon = "✅"
+            status_text = "PASS"
+        else:
+            icon = "❌"
+            status_text = "FAIL"
+
+        if trace.desc:
+            label = trace.desc
+            if trace.operator in ("and", "or", "not"):
+                label = f"{label} <{trace.operator.upper()}>"
+        else:
+            label = trace.operator.upper()
+
+        line = f"{indent}{icon}{status_text} {label}"
+
+        if trace.error:
+            error_indent = "  " * (level + 1)
+            line += f"\n{error_indent}💥 Error: {trace.error!r}"
+
+        lines = [line]
+        for child in trace.children:
+            lines.append(self.render(child, level + 1))
+
+        return "\n".join(lines)
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -55,7 +88,6 @@ class Trace(Generic[T_contra]):
     desc: str | None = field(default=None)
     value: T_contra | None = field(default=None, repr=False)
     error: Exception | None = field(default=None, repr=False)
-    elapsed: float = field(default=0.0)
 
     _style: None | TraceStyle = field(hash=False, default=None, repr=False, compare=False, init=False)
 
@@ -100,7 +132,6 @@ class Trace(Generic[T_contra]):
             else:
                 return NotImplemented
             children = (self, other_trace)
-            elapsed = self.elapsed + other_trace.elapsed
             if op == "and":
                 success = self.success and other_trace.success
             elif op == "or":
@@ -110,12 +141,10 @@ class Trace(Generic[T_contra]):
                 raise ValueError(msg)
         else:
             children = (self,)
-            elapsed = self.elapsed
             success = not self.success
 
         return self.__class__(
             children=children,
-            elapsed=elapsed,
             success=success,
             operator=op,
         )

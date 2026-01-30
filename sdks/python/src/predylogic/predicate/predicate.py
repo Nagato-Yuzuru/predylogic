@@ -79,7 +79,6 @@ class Predicate(Generic[T_contra], ABC):
         /,
         *,
         trace: Literal[False] = False,
-        short_circuit: bool = True,
         fail_skip: tuple[type[Exception], ...] | None = None,
     ) -> bool: ...
 
@@ -309,7 +308,23 @@ class Compiler:
             self._leaf_counter += 1
             self._leaf_map[cache_key] = name
 
-            if self.fail_skip:
+            if self.trace:
+                # In trace mode, leaf must return Trace. We always wrap raw booleans.
+                if self.fail_skip:
+                    self._context[name] = self._wrap_with_fail_skip(leaf, fallback)
+                else:
+                    trace_cls: type[Trace] = self._context.get("Trace", Trace)
+
+                    def _wrap(
+                        ctx: T_contra,
+                        _leaf: _PredicateLeaf = leaf,
+                        _trace_cls: type[Trace] = trace_cls,
+                    ) -> Trace:
+                        res = _leaf.fn(ctx)
+                        return _trace_cls(success=bool(res), operator="PRUE_BOOL", node=_leaf, desc=_leaf.desc)
+
+                    self._context[name] = _wrap
+            elif self.fail_skip:
                 self._context[name] = self._wrap_with_fail_skip(leaf, fallback)
             else:
                 self._context[name] = leaf.fn
@@ -324,7 +339,10 @@ class Compiler:
 
         def wrapper(ctx: T_contra) -> bool | Trace:
             try:
-                return leaf.fn(ctx)
+                res = leaf.fn(ctx)
+                if not trace_mode:
+                    return res
+                return trace_cls(success=bool(res), operator="PRUE_BOOL", node=leaf, desc=leaf.desc)
             except fail_skip_excs as e:
                 if not trace_mode:
                     return fallback
@@ -361,7 +379,7 @@ class Compiler:
                 current = children[0]
 
         chain.append(current)
-        return reversed(chain)
+        return chain
 
     def _fix_locations_iterative(self, root: ast.AST) -> None:
         """
@@ -437,8 +455,8 @@ class Compiler:
                         stack.append(self.CompileStack(flat_tuple, visited=False, fallback=fallback))
 
                         child_fallback = node_type != "or"
-                        for child in chain:
-                            stack.append((child, False, child_fallback))
+                        # Stack is LIFO: push in reverse so evaluation is left-to-right.
+                        stack.extend((child, False, child_fallback) for child in chain)
 
                     case _PredicateNot(op=op):
                         # Reversing the outer layer's expectations.
