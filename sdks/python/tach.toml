@@ -1,6 +1,7 @@
 exclude = ["**/*__pycache__", "**/*egg-info", "**/docs", "**/tests", "**/.venv"]
+ignore_type_checking_imports = true
 interfaces = []
-layers = ["register", "predicate", "trace", "typedefs"]
+layers = ["register", "schema", "predicate", "trace", "typedefs"]
 source_roots = ["src"]
 
 [[modules]]
@@ -9,16 +10,20 @@ layer = "typedefs"
 path = "predylogic.typedefs"
 
 [[modules]]
-depends_on = ["predylogic.typedefs", "predylogic.predicate"]
+depends_on = []
 layer = "register"
 path = "predylogic.register"
 
 [[modules]]
-depends_on = ["predylogic.typedefs"]
+depends_on = []
 layer = "trace"
 path = "predylogic.trace"
 
 [[modules]]
-depends_on = ["predylogic.trace", "predylogic.typedefs"]
+depends_on = []
 layer = "predicate"
 path = "predylogic.predicate"
+
+[[modules]]
+depends_on = []
+path = "predylogic.schema"

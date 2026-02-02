@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass
 
 from pydantic import BaseModel
@@ -29,6 +28,5 @@ def is_over_age_threshold(user: UserCtx, threshold: int) -> bool:
 
 def test_schema():
     schema = SchemaGenerator(test_registry).generate()
-    json_schema = schema.model_json_schema()
-    raw = json.dumps(json_schema)
+    schema.model_json_schema()
     assert isinstance(schema, BaseModel)
