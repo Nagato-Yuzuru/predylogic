@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic, Literal, Protocol, TypeVar, overload
 
 if TYPE_CHECKING:
     from predylogic.predicate import Predicate
-    from predylogic.types import LogicBinOp, LogicOp, PredicateNodeType
+    from predylogic.typedefs import LogicBinOp, LogicOp, PredicateNodeType
 
 if sys.version_info < (3, 11):
     pass

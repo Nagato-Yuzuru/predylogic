@@ -21,7 +21,7 @@ from typing import (
 )
 
 from predylogic.trace.trace import Trace
-from predylogic.types import LogicBinOp
+from predylogic.typedefs import LogicBinOp
 
 if sys.version_info >= (3, 11):
     from typing import assert_never
@@ -31,7 +31,7 @@ else:
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
-    from predylogic.types import PredicateNodeType
+    from predylogic.typedefs import PredicateNodeType
 
 T_contra = TypeVar("T_contra", contravariant=True)
 

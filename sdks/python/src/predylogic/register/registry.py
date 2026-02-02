@@ -10,7 +10,7 @@ from predylogic.predicate import Predicate, predicate
 from predylogic.register.errs import RegistryNameConflictError, RuleDefConflictError, RuleDefNotNamedError
 
 if TYPE_CHECKING:
-    from predylogic.types import RuleDef
+    from predylogic.typedefs import RuleDef
 
 T_contra = TypeVar("T_contra", contravariant=True)
 P = ParamSpec("P")
