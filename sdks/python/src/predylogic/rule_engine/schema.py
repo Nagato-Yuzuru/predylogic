@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from collections import OrderedDict
 from functools import reduce
-from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar, cast
 
 from caseconverter import pascalcase
 from pydantic import ConfigDict, Field, RootModel, create_model
@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 T_cap = TypeVar("T_cap")
 T_union = TypeVar("T_union")
 
+RSMT_co = TypeVar("RSMT_co", bound=RuleSetManifest, covariant=True)
+
 
 class SchemaGenerator:
     """
@@ -27,7 +29,7 @@ class SchemaGenerator:
     def __init__(self, registry: Registry[T_cap]):
         self.registry = registry
 
-    def generate(self) -> type[RuleSetManifest]:
+    def generate(self) -> type[RSMT_co]:
         """
         Generates a dynamic RuleSetManifest model with rebuilt validation.
 
@@ -55,9 +57,9 @@ class SchemaGenerator:
         )
 
         model.model_rebuild(_types_namespace={union_defs.__name__: union_defs})
-        return model
+        return cast("type[RSMT_co]", model)
 
-    def get_rule_def_types(self) -> type[RootModel[Any]]:
+    def get_rule_def_types(self) -> Any:  # noqa: ANN401
         """
         Generates the union of rule definitions from the current registry.
 
@@ -72,9 +74,8 @@ class SchemaGenerator:
         """
         defs = tuple(self._create_rule_model(rule_name, producer) for rule_name, producer in self.registry.items())
         if not defs:
-            return self._wrap_named_union(type(None))
-        union_defs = reduce(lambda a, b: a | b, defs)
-        return self._wrap_named_union(union_defs)
+            return type(None)
+        return reduce(lambda a, b: a | b, defs)
 
     def _wrap_named_union(self, union_type: T_union) -> type[RootModel[T_union]]:
         name = f"{to_pascal(self.registry.name)}RuleDef"
@@ -106,7 +107,7 @@ class SchemaGenerator:
             ),
             rule_def_name=(
                 Literal[rule_name],  # ty:ignore[invalid-type-form]
-                Field(description="Name of the rule definition in the registry"),
+                Field(rule_name, description="Name of the rule definition in the registry", init=False),
             ),
             **signatures,
         )  # ty:ignore[no-matching-overload]

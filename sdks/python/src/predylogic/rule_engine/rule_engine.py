@@ -22,6 +22,8 @@ else:
 
 T_contra = TypeVar("T_contra", contravariant=True)
 T_cap = TypeVar("T_cap")
+
+RuleUnionT_contra = TypeVar("RuleUnionT_contra", bound=LogicNode, contravariant=True)
 RuleConfigT_contra = TypeVar("RuleConfigT_contra", bound=BaseRuleConfig, contravariant=True)
 
 
@@ -184,7 +186,7 @@ class RuleEngine:
         where updated rules exist on the chain, will likewise be updated.
 
         Args:
-            manifests: One or more instances of RuleSetManifest[T_cap] that are to
+            manifests: One or more instances of RuleSetManifest that are to
                 be updated.
         """
 

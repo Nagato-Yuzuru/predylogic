@@ -30,7 +30,10 @@ class BaseRuleConfig(BaseModel, ABC):
     rule_def_name: str
 
 
-RuleUnionT = TypeVar("RuleUnionT")
+if TYPE_CHECKING:
+    RuleUnionT = TypeVar("RuleUnionT", bound=BaseRuleConfig)
+else:
+    RuleUnionT = TypeVar("RuleUnionT")
 
 
 class RuleSetManifest(BaseModel, Generic[RuleUnionT]):
