@@ -1,7 +1,7 @@
 exclude = ["**/*__pycache__", "**/*egg-info", "**/docs", "**/tests", "**/.venv"]
 ignore_type_checking_imports = true
 interfaces = []
-layers = ["register", "rule_engine", "predicate", "trace", "typedefs"]
+layers = ["rule_engine", "register", "predicate", "trace", "typedefs"]
 source_roots = ["src"]
 
 [[modules]]

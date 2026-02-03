@@ -52,3 +52,27 @@ class RuleDefConflictError(RegisterError):
         super().__init__(
             f"{self.rule_name} is already registered in {self.registry_name}: {', '.join(self.registered)}",
         )
+
+
+class RegistryNotFoundError(RegisterError):
+    """Raised when attempting to get a registry that does not exist."""
+
+    def __init__(self, registry_name: str):
+        self.registry_name = registry_name
+        super().__init__(f"Registry '{self.registry_name}' not found")
+
+
+class RuleNotFoundError(RegisterError):
+    """Raised when attempting to get a rule that does not exist."""
+
+    def __init__(self, rule_name: str):
+        self.rule_name = rule_name
+        super().__init__(f"Rule '{self.rule_name}' not found")
+
+
+class RuleDefNotFoundError(RegisterError):
+    """Raised when attempting to get a rule definition that does not exist."""
+
+    def __init__(self, rule_def_name: str):
+        self.rule_def_name = rule_def_name
+        super().__init__(f"Rule definition '{rule_def_name}' not found")
