@@ -12,12 +12,14 @@ from typing import (
     Generic,
     Literal,
     NamedTuple,
+    Protocol,
     TypeAlias,
     TypeGuard,
     TypeVar,
     cast,
     final,
     overload,
+    runtime_checkable,
 )
 
 from predylogic.trace.trace import Trace
@@ -43,8 +45,150 @@ RT_OR = "_rt_or"
 RT_AND = "_rt_and"
 
 
+@runtime_checkable
+class Predicate(Protocol[T_contra]):
+    """
+    Defines a type-checkable protocol for predicates that can process a given context and return
+    a boolean result or a trace of execution details when tracing is enabled.
+
+    This protocol is intended for use in scenarios where context-based decision logic is needed.
+    It enforces the implementation of certain properties and method signatures, ensuring consistent
+    behavior across different types of predicates.
+
+    Attributes:
+        node_type: Specifies the type of the predicate node. It is mandatory for implementers
+            of this protocol to provide this property.
+        desc: An optional description of the predicate to provide additional context or
+            information about its purpose.
+        name: An optional name for the predicate, which can serve as an identifier or label.
+    """
+
+    @property
+    def node_type(self) -> PredicateNodeType: ...  # noqa: D102
+
+    @property
+    def desc(self) -> str | None: ...  # noqa: D102
+
+    @property
+    def name(self) -> str | None: ...  # noqa: D102
+
+    @overload
+    def __call__(
+        self,
+        ctx: T_contra,
+        /,
+        *,
+        trace: Literal[True],
+        short_circuit: bool = True,
+        fail_skip: tuple[type[Exception], ...] | None = None,
+    ) -> Trace: ...
+
+    @overload
+    def __call__(
+        self,
+        ctx: T_contra,
+        /,
+        *,
+        trace: Literal[False] = False,
+        short_circuit: Literal[True] = True,
+        fail_skip: tuple[type[Exception], ...] | None = None,
+    ) -> bool: ...
+
+    def __call__(
+        self,
+        ctx: T_contra,
+        /,
+        *,
+        trace: bool = False,
+        short_circuit: bool = True,
+        fail_skip: tuple[type[Exception], ...] | None = None,
+    ) -> bool | Trace:
+        """
+        Executes the callable object using the provided context and optional parameters to
+        control execution behavior and error handling.
+
+        Args:
+            ctx: The context that is passed into the callable object during execution.
+            trace: Specifies whether to enable tracing of execution for debugging or
+                monitoring purposes. Defaults to False.
+            short_circuit: Determines whether the execution should stop immediately upon
+                encountering a failure. Defaults to True.
+            fail_skip: A tuple of exception types to be skipped or ignored during execution.
+                If provided, these exceptions will not disrupt the execution's flow. Defaults
+                to None.
+
+        Returns:
+            Either a boolean indicating the success or failure of the operation, or a
+            Trace object that contains detailed execution history if tracing is enabled.
+        """
+        ...
+
+
+class ComposablePredicate(Predicate[T_contra], Protocol[T_contra]):
+    """
+    Represents a predicate that can be composed using logical operations.
+
+    This class provides functionality for combining predicates using logical AND, OR,
+    and NOT operations. It allows creating complex logical conditions by chaining
+    or mixing these operations. It is particularly useful in scenarios requiring
+    customizable condition evaluation, such as filtering or rule-based matching.
+    """
+
+    def __and__(
+        self,
+        other: ComposablePredicate[T_contra],
+    ) -> ComposablePredicate[T_contra]:
+        """
+        Combine this predicate with another using logical AND.
+
+        To create a large number of consecutive __and__ combinations,
+        the `Predicate.all` method should be used to avoid the overhead of creating additional objects.
+        """
+        ...
+
+    def __or__(self, other: ComposablePredicate[T_contra]) -> ComposablePredicate[T_contra]:
+        """
+        Combine this predicate with another using logical or.
+
+        To create a large number of consecutive __or__ combinations,
+        the `Predicate.any` method should be used to avoid the overhead of creating additional objects.
+        """
+        ...
+
+    def __invert__(self) -> ComposablePredicate[T_contra]:
+        """
+        Combine this predicate with another using logical not.
+        """
+
+        ...
+
+
+def all_of(predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePredicate[T_contra]:
+    """
+    Use this method to combine multiple predicates,
+        thereby avoiding the object creation overhead associated with chained calls.
+
+    Args:
+        predicates: Predicates are combined sequentially using `and`.
+
+    """
+    return BasePredicate.all(predicates)
+
+
+def any_of(predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePredicate[T_contra]:
+    """
+    Use this method to combine multiple predicates,
+        thereby avoiding the object creation overhead associated with chained calls.
+
+    Args:
+        predicates: Predicates are combined sequentially using `or`.
+
+    """
+    return BasePredicate.any(predicates)
+
+
 @dataclass(frozen=True, kw_only=True)
-class Predicate(Generic[T_contra], ABC):
+class BasePredicate(ComposablePredicate[T_contra], ABC, Generic[T_contra]):
     """
     Represents a base class for predicates with logical operations
     and evaluation on a given context.
@@ -86,6 +230,7 @@ class Predicate(Generic[T_contra], ABC):
         /,
         *,
         trace: Literal[False] = False,
+        short_circuit: Literal[True] = True,
         fail_skip: tuple[type[Exception], ...] | None = None,
     ) -> bool: ...
 
@@ -127,8 +272,8 @@ class Predicate(Generic[T_contra], ABC):
 
     def __and__(
         self,
-        other: Predicate[T_contra],
-    ) -> Predicate[T_contra]:
+        other: ComposablePredicate[T_contra],
+    ) -> ComposablePredicate[T_contra]:
         """
         Combine this predicate with another using logical AND.
 
@@ -139,7 +284,7 @@ class Predicate(Generic[T_contra], ABC):
             return NotImplemented
         return _PredicateAnd(children=(self, other))
 
-    def __or__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
+    def __or__(self, other: ComposablePredicate[T_contra]) -> ComposablePredicate[T_contra]:
         """
         Combine this predicate with another using logical or.
 
@@ -151,7 +296,7 @@ class Predicate(Generic[T_contra], ABC):
             return NotImplemented
         return _PredicateOr(children=(self, other))
 
-    def __invert__(self) -> Predicate[T_contra]:
+    def __invert__(self) -> ComposablePredicate[T_contra]:
         """
         Combine this predicate with another using logical not.
         """
@@ -159,7 +304,7 @@ class Predicate(Generic[T_contra], ABC):
         return _PredicateNot(op=self)
 
     @classmethod
-    def all(cls, predicates: Sequence[Predicate[T_contra]]) -> Predicate[T_contra]:
+    def all(cls, predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePredicate[T_contra]:
         """
         Use this method to combine multiple predicates,
             thereby avoiding the object creation overhead associated with chained calls.
@@ -176,7 +321,7 @@ class Predicate(Generic[T_contra], ABC):
         return _PredicateAnd(children=tuple(predicates))
 
     @classmethod
-    def any(cls, predicates: Sequence[Predicate[T_contra]]) -> Predicate[T_contra]:
+    def any(cls, predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePredicate[T_contra]:
         """
         Use this method to combine multiple predicates,
             thereby avoiding the object creation overhead associated with chained calls.
@@ -193,7 +338,7 @@ class Predicate(Generic[T_contra], ABC):
         return _PredicateOr(children=tuple(predicates))
 
 
-def predicate(fn: PredicateFn[T_contra], *, name: str, desc: str | None = None) -> Predicate[T_contra]:
+def predicate(fn: PredicateFn[T_contra], *, name: str, desc: str | None = None) -> ComposablePredicate[T_contra]:
     """
     Creates and returns a Predicate object from a given predicate function.
 
@@ -221,7 +366,7 @@ def predicate(fn: PredicateFn[T_contra], *, name: str, desc: str | None = None) 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 @final
-class _PredicateLeaf(Predicate[T_contra]):
+class _PredicateLeaf(BasePredicate[T_contra]):
     """
     Leaf node in the predicate tree.
     """
@@ -232,15 +377,15 @@ class _PredicateLeaf(Predicate[T_contra]):
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 @final
-class _PredicateAnd(Predicate[T_contra]):
+class _PredicateAnd(BasePredicate[T_contra]):
     """
     And node in the predicate tree.
     """
 
     node_type: Literal["and"] = field(default="and", init=False)
-    children: tuple[Predicate[T_contra], ...]
+    children: tuple[ComposablePredicate[T_contra], ...]
 
-    def __and__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
+    def __and__(self, other: ComposablePredicate[T_contra]) -> ComposablePredicate[T_contra]:
         if not is_predicate(other):
             return NotImplemented
         return _PredicateAnd(children=(self, other))
@@ -253,19 +398,19 @@ class _PredicateAnd(Predicate[T_contra]):
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 @final
-class _PredicateOr(Predicate[T_contra]):
+class _PredicateOr(BasePredicate[T_contra]):
     """
     Or node in the predicate tree.
     """
 
     node_type: Literal["or"] = field(default="or", init=False)
-    children: tuple[Predicate[T_contra], ...]
+    children: tuple[ComposablePredicate[T_contra], ...]
 
     # def __post_init__(self):
     #     if len(self.children) <= 2:
     #         msg = "Too few children for OR predicate"
     #         raise ValueError(msg)
-    def __or__(self, other: Predicate[T_contra]) -> Predicate[T_contra]:
+    def __or__(self, other: ComposablePredicate[T_contra]) -> ComposablePredicate[T_contra]:
         if not is_predicate(other):
             return NotImplemented
         return _PredicateOr(children=(self, other))
@@ -273,13 +418,13 @@ class _PredicateOr(Predicate[T_contra]):
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 @final
-class _PredicateNot(Predicate[T_contra]):
+class _PredicateNot(BasePredicate[T_contra]):
     """
     Not node in the predicate tree.
     """
 
     node_type: Literal["not"] = field(default="not", init=False)
-    op: Predicate[T_contra]
+    op: ComposablePredicate[T_contra]
 
 
 PredicateNode: TypeAlias = (
@@ -287,12 +432,12 @@ PredicateNode: TypeAlias = (
 )
 
 
-def is_predicate(p: Any) -> TypeGuard[Predicate]:  # noqa: ANN401
+def is_predicate(p: Any) -> TypeGuard[ComposablePredicate]:  # noqa: ANN401
     """
     Check if the given object is a valid predicate.
     """
 
-    return isinstance(p, Predicate)
+    return isinstance(p, BasePredicate)
 
 
 class Compiler:
@@ -374,7 +519,7 @@ class Compiler:
 
         return wrapper
 
-    def _collect_chain(self, node: Predicate[T_contra], node_type: LogicBinOp) -> Iterable[Predicate]:
+    def _collect_chain(self, node: BasePredicate[T_contra], node_type: LogicBinOp) -> Iterable[BasePredicate]:
         chain = []
         current = node
 
@@ -429,14 +574,14 @@ class Compiler:
         Represents a stack entry for predicate compilation.
         """
 
-        node: Predicate | FLATTENED_TUPLE
+        node: BasePredicate | FLATTENED_TUPLE
         visited: bool
         fallback: bool
 
     # noinspection D
     def compile(  # noqa: D102
         self,
-        p: Predicate[T_contra],
+        p: BasePredicate[T_contra],
     ) -> Callable[[T_contra], bool | Trace]:
         # XXX: Hard to say whether evaluating an if statement or function lookup is faster during runtime;
         #  this may require specific profiling.
@@ -469,6 +614,8 @@ class Compiler:
                         | _PredicateOr(node_type=node_type, children=children)
                     ):
                         flat_tuple = ("FLATTENED", node_type, len(children))
+                        # NOTE: _collect_chain collects right-siblings, resulting in reverse execution order.
+                        #  Stack extension restores the Left-to-Right order for AST generation.
                         chain = self._collect_chain(node, node_type)
                         stack.append(self.CompileStack(flat_tuple, visited=False, fallback=fallback))
 

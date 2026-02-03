@@ -82,7 +82,7 @@ It provides the flexibility of a rule engine with the performance of native code
 1. Define what can be checked. These are your stable building blocks.
     ```python
     from typing import TypedDict
-    from predylogic import Registry, Predicate
+    from predylogic import Registry, all_of
 
 
     # 1. Define the Context (Protocol or dataclass or Pydantic BaseModel, or any other type)
@@ -116,14 +116,20 @@ It provides the flexibility of a rule engine with the performance of native code
 
     ```python
     # Rule: "Safe AND (High Value OR In Target Region)"
-    # This structure validates against the schema derived from the registry.
-    policy = Predicate.all([
+    # This structure validates against the rule_engine derived from the registry.
+
+
+    # Alternatively, you may utilise the __and__, __or__, and __invert__ overloads (| & ~).
+    #   For extensive isomorphic combinations, use `all_of/any_of` to improve performance.
+
+    policy = all_of([
         is_safe(),
         Predicate.any([
             is_high_value(2000),
-            in_regions(["US", "EU"])
-        ])
+            in_regions(["US", "EU"]),
+        ]),
     ])
+
     # The 'policy' object is now compiled and ready for hot-loop execution.
     ```
 3. Execution & Trace
