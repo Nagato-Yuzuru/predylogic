@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import inspect
 from collections import OrderedDict
-from functools import reduce
-from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar, cast
+from functools import cached_property, reduce
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, TypeVar
 
 from caseconverter import pascalcase
 from pydantic import ConfigDict, Field, RootModel, create_model
@@ -11,6 +11,8 @@ from pydantic import ConfigDict, Field, RootModel, create_model
 from predylogic.rule_engine.base import X_PARAMS_ORDER, BaseRuleConfig, RuleSetManifest
 
 if TYPE_CHECKING:
+    from types import UnionType
+
     from pydantic.fields import FieldInfo
 
     from predylogic.register.registry import PredicateProducer, Registry
@@ -18,10 +20,8 @@ if TYPE_CHECKING:
 T_cap = TypeVar("T_cap")
 T_union = TypeVar("T_union")
 
-RSMT_co = TypeVar("RSMT_co", bound=RuleSetManifest, covariant=True)
 
-
-class SchemaGenerator:
+class SchemaGenerator(Generic[T_cap]):
     """
     Generate JSON Schema for PredyLogic rules.
     """
@@ -29,7 +29,7 @@ class SchemaGenerator:
     def __init__(self, registry: Registry[T_cap]):
         self.registry = registry
 
-    def generate(self) -> type[RSMT_co]:
+    def generate(self) -> type[RuleSetManifest]:
         """
         Generates a dynamic RuleSetManifest model with rebuilt validation.
 
@@ -42,7 +42,7 @@ class SchemaGenerator:
             A dynamically created and rebuilt RuleSetManifest
             model specific to the registered rule definitions.
         """
-        union_defs = self.get_rule_def_types()
+        union_defs = self.rule_def_types
         model = create_model(
             f"{to_pascal(self.registry.name)}Manifest",
             __base__=RuleSetManifest[union_defs],  # ty:ignore[invalid-type-form]
@@ -56,10 +56,11 @@ class SchemaGenerator:
             ),
         )
 
-        model.model_rebuild(_types_namespace={union_defs.__name__: union_defs})
-        return cast("type[RSMT_co]", model)
+        model.model_rebuild()
+        return model
 
-    def get_rule_def_types(self) -> Any:  # noqa: ANN401
+    @cached_property
+    def rule_def_types(self) -> UnionType | type:
         """
         Generates the union of rule definitions from the current registry.
 
@@ -69,7 +70,7 @@ class SchemaGenerator:
         identifying specific rule definitions.
 
         Returns:
-            Any: A union of all the rule definitions created from the registry or
+            A union of all the rule definitions created from the registry or
             `NoneType` if no definitions exist.
         """
         defs = tuple(self._create_rule_model(rule_name, producer) for rule_name, producer in self.registry.items())
@@ -91,7 +92,7 @@ class SchemaGenerator:
         wrapped.__name__ = name
         return wrapped
 
-    def _create_rule_model(self, rule_name: str, producer: PredicateProducer) -> type[BaseRuleConfig]:
+    def _create_rule_model(self, rule_name: str, producer: PredicateProducer[T_cap, ...]) -> type[BaseRuleConfig]:
         sig = inspect.signature(producer)
         doc = inspect.getdoc(producer) or f"Configuration for {rule_name}"
         field_order = list(sig.parameters.keys())

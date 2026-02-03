@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from abc import ABC
 from graphlib import CycleError, TopologicalSorter
-from typing import TYPE_CHECKING, Annotated, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Annotated, Generic, Literal, TypeVar, final
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
 
@@ -56,7 +56,9 @@ class RuleSetManifest(BaseModel, Generic[RuleUnionT]):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    registry: str
+    registry: str = Field(
+        ...,
+    )
     rules: dict[str, LogicNode[RuleUnionT]] = Field(default_factory=dict, description="Dag of rule definitions.")
 
     @field_validator("rules", mode="after")
@@ -83,6 +85,7 @@ class BaseLogicNode(BaseModel, ABC, Generic[RuleUnionT]):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", frozen=True)
 
 
+@final
 class RefNode(BaseLogicNode[RuleUnionT]):
     """
     Reference a named node. Allow the use of a specific rule to continue the computation.
@@ -93,6 +96,7 @@ class RefNode(BaseLogicNode[RuleUnionT]):
     ref_id: str = Field(..., description="Rule definition ID")
 
 
+@final
 class LeafNode(BaseLogicNode[RuleUnionT]):
     """
     Leaf node. Atomic node.
@@ -105,6 +109,7 @@ class LeafNode(BaseLogicNode[RuleUnionT]):
     rule: RuleUnionT = Field(..., description="The rule to evaluate")
 
 
+@final
 class AndNode(BaseLogicNode[RuleUnionT]):
     """
     Using non-binary AND nodes enables efficient compilation to predicate dis.
@@ -117,6 +122,7 @@ class AndNode(BaseLogicNode[RuleUnionT]):
     rules: list[LogicNode[RuleUnionT]] = Field(..., min_length=2, description="All rules must pass")
 
 
+@final
 class OrNode(BaseLogicNode[RuleUnionT]):
     """
     Using non-binary OR nodes enables efficient compilation to predicate dis.
@@ -129,6 +135,7 @@ class OrNode(BaseLogicNode[RuleUnionT]):
     rules: list[LogicNode[RuleUnionT]] = Field(..., min_length=2, description="Any rule must pass")
 
 
+@final
 class NotNode(BaseLogicNode[RuleUnionT]):
     """
     Not node in the predicate tree.

@@ -20,19 +20,15 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_never
 
-T_contra = TypeVar("T_contra", contravariant=True)
-T_cap = TypeVar("T_cap")
-
-RuleUnionT_contra = TypeVar("RuleUnionT_contra", bound=LogicNode, contravariant=True)
-RuleConfigT_contra = TypeVar("RuleConfigT_contra", bound=BaseRuleConfig, contravariant=True)
+T = TypeVar("T")
 
 
-class PredicateHandle(Predicate[T_contra]):
+class PredicateHandle(Predicate[T]):
     """
     Handle for predicates. Internally holds a predicate reference, enabling atomic updates during configuration refreshes.
     """
 
-    def __init__(self, predicate: Predicate[T_contra]):
+    def __init__(self, predicate: Predicate[T]):
         self.__predicate = predicate
 
     @property
@@ -50,7 +46,7 @@ class PredicateHandle(Predicate[T_contra]):
     @overload
     def __call__(
         self,
-        ctx: T_contra,
+        ctx: T,
         /,
         *,
         trace: Literal[True],
@@ -61,7 +57,7 @@ class PredicateHandle(Predicate[T_contra]):
     @overload
     def __call__(
         self,
-        ctx: T_contra,
+        ctx: T,
         /,
         *,
         trace: Literal[False] = False,
@@ -71,7 +67,7 @@ class PredicateHandle(Predicate[T_contra]):
 
     def __call__(
         self,
-        ctx: T_contra,
+        ctx: T,
         /,
         *,
         trace: bool = False,
@@ -103,7 +99,7 @@ class PredicateHandle(Predicate[T_contra]):
             fail_skip=fail_skip,
         )  # ty:ignore[no-matching-overload]
 
-    def _update_predicate(self, predicate: Predicate[T_contra]):
+    def _update_predicate(self, predicate: Predicate[T]):
         self.__predicate = predicate
 
 
@@ -135,8 +131,8 @@ class RuleEngine:
         registry_name: str,
         rule_name: str,
         *,
-        ctx_type: type[T_cap],
-    ) -> PredicateHandle[T_cap]: ...
+        ctx_type: type[T],
+    ) -> PredicateHandle[T]: ...
 
     @overload
     def get_predicate_handle(
@@ -175,7 +171,7 @@ class RuleEngine:
             registry_handles[rule_name] = handle
             return handle
 
-    def update_manifests(self, *manifests: RuleSetManifest[RuleConfigT_contra]):
+    def update_manifests(self, *manifests: RuleSetManifest):
         """
         Updates the provided manifests to the current instance.
 
@@ -209,8 +205,8 @@ class RuleEngine:
 
     def _compile_node(
         self,
-        node: LogicNode[RuleConfigT_contra],
-        manifest: RuleSetManifest[RuleConfigT_contra],
+        node: LogicNode,
+        manifest: RuleSetManifest,
     ) -> ComposablePredicate:
         """
         Recursively compiles a LogicNode into a Predicate tree.
@@ -234,7 +230,7 @@ class RuleEngine:
             case _:
                 assert_never(inner)
 
-    def _predicate_from_rule_config(self, registry_name: str, rule_config: RuleConfigT_contra) -> ComposablePredicate:
+    def _predicate_from_rule_config(self, registry_name: str, rule_config: BaseRuleConfig) -> ComposablePredicate:
         registry = self.registry_manager.get_register(registry_name)
         if registry is None:
             raise RegistryNotFoundError(registry_name)
@@ -248,7 +244,7 @@ class RuleEngine:
         params = rule_config.model_dump(by_alias=True, exclude={"rule_def_name"})
         return producer(**params)
 
-    def _missing_predicate(self, registry_name: str, rule_name: str) -> Predicate[Any]:
+    def _missing_predicate(self, registry_name: str, rule_name: str) -> Predicate:
         def _raise(_) -> bool:  # noqa: ANN001
             raise RuleRevokedError(registry_name, rule_name)
 

@@ -9,14 +9,16 @@ Tests cover:
 
 from __future__ import annotations
 
+import contextlib
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
 
 from predylogic import SchemaGenerator
 from predylogic.rule_engine import RuleEngine
 from predylogic.rule_engine.base import LeafNode
 
-from .conftest import User
+from .conftest import User, model_mock
 
 
 class TestConcurrentHandleCreation:
@@ -36,9 +38,11 @@ class TestConcurrentHandleCreation:
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
 
-        manifest = manifest_model(
+        mock_type = model_mock(manifest_model)
+        leaf_factory = model_mock(LeafNode[Any])
+        manifest = mock_type.build(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"}),
             },
         )
 
@@ -70,13 +74,15 @@ class TestConcurrentHandleCreation:
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
 
-        manifest = manifest_model(
+        mock_type = model_mock(manifest_model)
+        leaf_factory = model_mock(LeafNode[Any])
+        manifest = mock_type.build(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_active"}),
-                "rule_b": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                "rule_c": LeafNode(rule={"rule_def_name": "is_named", "name": "Alice"}),
-            },  # ty:ignore[invalid-argument-type]
-        )  # ty:ignore[missing-argument]
+                "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"}),
+                "rule_b": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18}),
+                "rule_c": leaf_factory.build(rule={"rule_def_name": "is_named", "name": "Alice"}),
+            },
+        )
 
         engine.update_manifests(manifest)
 
@@ -147,8 +153,10 @@ class TestConcurrentManifestUpdates:
         manifest_model = schema_gen.generate()
 
         # Pre-create handle
-        manifest_initial = manifest_model(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active"})},
+        mock_type = model_mock(manifest_model)
+        leaf_factory = model_mock(LeafNode[Any])
+        manifest_initial = mock_type.build(
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
         )
         engine.update_manifests(manifest_initial)
         handle = engine.get_predicate_handle("user_registry", "rule_a")
@@ -159,12 +167,12 @@ class TestConcurrentManifestUpdates:
         def update_manifest(iteration: int):
             # Alternate between two different rule configs
             if iteration % 2 == 0:
-                manifest = manifest_model(
-                    rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active"})},
+                manifest = mock_type.build(
+                    rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
                 )
             else:
-                manifest = manifest_model(
-                    rules={"rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18})},
+                manifest = mock_type.build(
+                    rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18})},
                 )
             engine.update_manifests(manifest)
 
@@ -194,8 +202,10 @@ class TestConcurrentManifestUpdates:
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
 
-        manifest = manifest_model(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active"})},
+        mock_type = model_mock(manifest_model)
+        leaf_factory = model_mock(LeafNode[Any])
+        manifest = mock_type.build(
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
         )
         engine.update_manifests(manifest)
 
@@ -207,14 +217,12 @@ class TestConcurrentManifestUpdates:
             for _ in range(10):
                 handle = engine.get_predicate_handle("user_registry", "rule_a")
                 handles_collected.append(handle)
-                try:
-                    handle(adult_user)  # Try to execute
-                except Exception:
-                    pass  # Might hit RuleRevokedError during updates
+                with contextlib.suppress(Exception):
+                    handle(adult_user)
 
         def writer(iteration: int):
-            manifest = manifest_model(
-                rules={"rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18})},
+            manifest = mock_type.build(
+                rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18})},
             )
             engine.update_manifests(manifest)
 
@@ -246,12 +254,16 @@ class TestConcurrentManifestUpdates:
         user_schema = SchemaGenerator(user_registry).generate()
         order_schema = SchemaGenerator(order_registry).generate()
 
+        user_mock = model_mock(user_schema)
+        order_mock = model_mock(order_schema)
+        leaf_factory = model_mock(LeafNode[Any])
+
         # Pre-load manifests
-        user_manifest = user_schema(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active"})},
+        user_manifest = user_mock.build(
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
         )
-        order_manifest = order_schema(
-            rules={"rule_b": LeafNode(rule={"rule_def_name": "is_priority"})},
+        order_manifest = order_mock.build(
+            rules={"rule_b": leaf_factory.build(rule={"rule_def_name": "is_priority"})},
         )
 
         engine.update_manifests(user_manifest, order_manifest)
@@ -262,14 +274,14 @@ class TestConcurrentManifestUpdates:
         num_threads = 20
 
         def update_user(iteration: int):
-            manifest = user_schema(
-                rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active"})},
+            manifest = user_mock.build(
+                rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
             )
             engine.update_manifests(manifest)
 
         def update_order(iteration: int):
-            manifest = order_schema(
-                rules={"rule_b": LeafNode(rule={"rule_def_name": "is_priority"})},
+            manifest = order_mock.build(
+                rules={"rule_b": leaf_factory.build(rule={"rule_def_name": "is_priority"})},
             )
             engine.update_manifests(manifest)
 
@@ -304,8 +316,10 @@ class TestConcurrentExecution:
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
 
-        manifest = manifest_model(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18})},
+        mock_type = model_mock(manifest_model)
+        leaf_factory = model_mock(LeafNode[Any])
+        manifest = mock_type.build(
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18})},
         )
 
         engine.update_manifests(manifest)
@@ -346,9 +360,11 @@ class TestRacConditions:
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
 
+        mock_type = model_mock(manifest_model)
+        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])  # ty:ignore[invalid-type-form]
         # Create manifest with multiple rules
-        manifest = manifest_model(
-            rules={f"rule_{i}": LeafNode(rule={"rule_def_name": "is_active"}) for i in range(20)},
+        manifest = mock_type.build(
+            rules={f"rule_{i}": leaf_factory.build(rule={"rule_def_name": "is_active"}) for i in range(20)},
         )
 
         engine.update_manifests(manifest)
@@ -387,9 +403,10 @@ class TestRacConditions:
         engine = RuleEngine(registry_manager)
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
-
-        manifest = manifest_model(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active"})},
+        mock_type = model_mock(manifest_model)
+        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])  # ty:ignore[invalid-type-form]
+        manifest = mock_type.build(
+            rules={"rule_a": leaf_factory.build()},
         )
 
         num_threads = 30

@@ -5,12 +5,16 @@ Shared fixtures for rule_engine tests.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TypedDict
+from types import new_class
+from typing import TypedDict, TypeVar, cast
 
 import pytest
+from polyfactory.factories.pydantic_factory import ModelFactory
+from pydantic import BaseModel
 
 from predylogic import Registry, RegistryManager
 
+M = TypeVar("M", bound=BaseModel)
 # ============================================================================
 # Context Types (diverse class types to validate engine works with any class)
 # ============================================================================
@@ -154,3 +158,41 @@ def expensive_product() -> Product:
 def cheap_product() -> Product:
     """Provides a cheap out-of-stock product."""
     return Product(name="Cable", price=5.0, in_stock=False)
+
+
+def model_mock(model: type[M]) -> type[ModelFactory[M]]:
+    def f(ns):
+        ns["__model__"] = model
+        ns["__module__"] = __name__
+
+    return cast(
+        "type[ModelFactory[M]]",
+        new_class(
+            f"{model.__name__}Mock",
+            (ModelFactory[M], model),
+            {},
+            f,
+        ),
+    )
+
+
+def create_node_factories(rule_def_types):
+    """
+    Create factory classes for LogicNodes with proper generic types.
+
+    Args:
+        rule_def_types: The union type from SchemaGenerator.rule_def_types
+
+    Returns:
+        Tuple of (LeafFactory, RefFactory, AndFactory, OrFactory, NotFactory)
+    """
+    from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode
+
+    # Create factories for each node type with the correct generic
+    leaf_factory = model_mock(LeafNode[rule_def_types])
+    ref_factory = model_mock(RefNode[rule_def_types])
+    and_factory = model_mock(AndNode[rule_def_types])
+    or_factory = model_mock(OrNode[rule_def_types])
+    not_factory = model_mock(NotNode[rule_def_types])
+
+    return leaf_factory, ref_factory, and_factory, or_factory, not_factory
