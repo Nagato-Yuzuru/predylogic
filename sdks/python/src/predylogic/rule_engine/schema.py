@@ -6,16 +6,17 @@ from functools import reduce
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar
 
 from caseconverter import pascalcase
-from pydantic import ConfigDict, Field, create_model
+from pydantic import ConfigDict, Field, RootModel, create_model
 
-from predylogic.schema.base import X_PARAMS_ORDER, BaseRuleConfig, RuleSetManifest
+from predylogic.rule_engine.base import X_PARAMS_ORDER, BaseRuleConfig, RuleSetManifest
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
     from predylogic.register.registry import PredicateProducer, Registry
 
-T_contra = TypeVar("T_contra", contravariant=True)
+T_cap = TypeVar("T_cap")
+T_union = TypeVar("T_union")
 
 
 class SchemaGenerator:
@@ -23,7 +24,7 @@ class SchemaGenerator:
     Generate JSON Schema for PredyLogic rules.
     """
 
-    def __init__(self, registry: Registry[T_contra]):
+    def __init__(self, registry: Registry[T_cap]):
         self.registry = registry
 
     def generate(self) -> type[RuleSetManifest]:
@@ -36,17 +37,27 @@ class SchemaGenerator:
         validation is rebuilt before returning the model.
 
         Returns:
-            type[RuleSetManifest]: A dynamically created and rebuilt RuleSetManifest
+            A dynamically created and rebuilt RuleSetManifest
             model specific to the registered rule definitions.
         """
         union_defs = self.get_rule_def_types()
-        model = RuleSetManifest[union_defs]
-        model.__name__ = f"{to_pascal(self.registry.name)}Manifest"
+        model = create_model(
+            f"{to_pascal(self.registry.name)}Manifest",
+            __base__=RuleSetManifest[union_defs],  # ty:ignore[invalid-type-form]
+            registry=(
+                Literal[self.registry.name],  # ty:ignore[invalid-type-form]
+                Field(
+                    self.registry.name,
+                    description="Name of the registry containing the rule definitions",
+                    init=False,
+                ),
+            ),
+        )
 
-        model.model_rebuild()
+        model.model_rebuild(_types_namespace={union_defs.__name__: union_defs})
         return model
 
-    def get_rule_def_types(self) -> Any:  # noqa: ANN401
+    def get_rule_def_types(self) -> type[RootModel[Any]]:
         """
         Generates the union of rule definitions from the current registry.
 
@@ -61,9 +72,23 @@ class SchemaGenerator:
         """
         defs = tuple(self._create_rule_model(rule_name, producer) for rule_name, producer in self.registry.items())
         if not defs:
-            return type(None)
-        union_defs = Annotated[reduce(lambda a, b: a | b, defs), Field(discriminator="rule_def_name")]  # ty:ignore[invalid-type-form]
-        return union_defs
+            return self._wrap_named_union(type(None))
+        union_defs = reduce(lambda a, b: a | b, defs)
+        return self._wrap_named_union(union_defs)
+
+    def _wrap_named_union(self, union_type: T_union) -> type[RootModel[T_union]]:
+        name = f"{to_pascal(self.registry.name)}RuleDef"
+        wrapped = create_model(
+            name,
+            __base__=RootModel,
+            __config__=ConfigDict(title=name),
+            root=(
+                Annotated[union_type, Field(discriminator="rule_def_name")],
+                Field(..., description="The rule definition to evaluate"),
+            ),
+        )
+        wrapped.__name__ = name
+        return wrapped
 
     def _create_rule_model(self, rule_name: str, producer: PredicateProducer) -> type[BaseRuleConfig]:
         sig = inspect.signature(producer)

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Annotated, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
 
-from predylogic.schema.errs import RuleDefRingError
+from predylogic.rule_engine.errs import RuleDefRingError
 
 if TYPE_CHECKING:
     from collections.abc import Generator

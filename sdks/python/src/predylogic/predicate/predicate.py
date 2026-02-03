@@ -385,16 +385,6 @@ class _PredicateAnd(BasePredicate[T_contra]):
     node_type: Literal["and"] = field(default="and", init=False)
     children: tuple[ComposablePredicate[T_contra], ...]
 
-    def __and__(self, other: ComposablePredicate[T_contra]) -> ComposablePredicate[T_contra]:
-        if not is_predicate(other):
-            return NotImplemented
-        return _PredicateAnd(children=(self, other))
-
-    # def __post_init__(self):
-    #     if len(self.children) <= 2:
-    #         msg = "Too few children for AND predicate"
-    #         raise ValueError(msg)
-
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 @final
@@ -405,15 +395,6 @@ class _PredicateOr(BasePredicate[T_contra]):
 
     node_type: Literal["or"] = field(default="or", init=False)
     children: tuple[ComposablePredicate[T_contra], ...]
-
-    # def __post_init__(self):
-    #     if len(self.children) <= 2:
-    #         msg = "Too few children for OR predicate"
-    #         raise ValueError(msg)
-    def __or__(self, other: ComposablePredicate[T_contra]) -> ComposablePredicate[T_contra]:
-        if not is_predicate(other):
-            return NotImplemented
-        return _PredicateOr(children=(self, other))
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
