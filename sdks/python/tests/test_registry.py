@@ -98,8 +98,8 @@ def test_registry_manager():
     registry1 = Registry[User]("registry1")
     registry2 = Registry[User]("registry2")
 
-    manager.add_register("registry1", registry1)
-    manager.add_register("registry2", registry2)
+    manager.add_register(registry1)
+    manager.add_register(registry2)
 
     assert manager.get_register("registry1") is registry1
     assert manager.get_register("registry2") is registry2
@@ -109,7 +109,7 @@ def test_registry_manager():
 def test_registry_manager_add_duplicate_name_raises_error():
     manager = RegistryManager()
     registry1 = Registry[User]("registry1")
-    manager.add_register("registry1", registry1)
+    manager.add_register(registry1)
 
     with pytest.raises(RegistryNameConflictError):
-        manager.add_register("registry1", registry1)
+        manager.add_register(registry1)

@@ -90,7 +90,7 @@ just py-check
 8. Validate that all unit tests are passing:
 
 ```bash
-just test
+just py-test
 ```
 
 9. (Optional) If you modified the documentation, you can preview it locally:

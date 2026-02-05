@@ -24,7 +24,11 @@ keywords = [
   "policy-engine",
 ]
 
-dependencies = ["typing-extensions>=4.15.0"]
+dependencies = [
+  "case-converter>=1.2.0",
+  "pydantic>=2.12.5",
+  "typing-extensions>=4.15.0",
+]
 description = "An embedded, composable schema-driven predicate logic engine."
 dynamic = ["version"]
 license-files = ["LICENSE"]
@@ -51,6 +55,7 @@ dev = [
 ]
 prof = ["memray>=1.19.1", "py-spy>=0.4.1"]
 test = [
+  "polyfactory>=3.2.0",
   "pytest>=9.0.2",
   "pytest-benchmark>=5.2.3",
   "pytest-codeblocks>=0.17.0",
@@ -84,6 +89,13 @@ artifacts = ["src/predylogic/_version.py"]
 
 [tool.ty.environment]
 python-version = "3.10"
+
+
+[[tool.ty.overrides]]
+include = ["tests/**"]
+[tool.ty.overrides.rules]
+invalid-argument-type = "ignore"
+invalid-type-form = "ignore"
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
@@ -163,7 +175,7 @@ allow-dict-calls-with-keyword-arguments = true
 "benchmarks/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
 "prof/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
 "src/predylogic/_version.py" = ["ALL"]
-"tests/*" = ["ANN", "D", "PLR0913", "PLR2004"]
+"tests/*" = ["ANN", "D", "PLR0913", "PLR2004", "FBT"]
 
 [tool.ruff.format]
 preview = true

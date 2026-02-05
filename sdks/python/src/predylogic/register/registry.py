@@ -6,11 +6,11 @@ from functools import wraps
 from threading import RLock
 from typing import TYPE_CHECKING, Generic, ParamSpec, Protocol, TypeVar, runtime_checkable
 
-from predylogic.predicate import Predicate, predicate
+from predylogic.predicate import ComposablePredicate, predicate
 from predylogic.register.errs import RegistryNameConflictError, RuleDefConflictError, RuleDefNotNamedError
 
 if TYPE_CHECKING:
-    from predylogic.types import RuleDef
+    from predylogic.typedefs import RuleDef
 
 T_contra = TypeVar("T_contra", contravariant=True)
 P = ParamSpec("P")
@@ -22,7 +22,7 @@ class PredicateProducer(Protocol[T_contra, P]):
     Callable that produces a predicate.
     """
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Predicate[T_contra]:  # noqa: D102
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> ComposablePredicate[T_contra]:  # noqa: D102
         ...
 
 
@@ -33,26 +33,24 @@ class RuleDecorator(Protocol[T_contra]):  # noqa: D101
 class RegistryManager:
     """
     Manage registries.
-
-    # TODO: shall be responsible for a portion of the JSON Schema export functionality.
     """
 
     def __init__(self):
         self.__registers_instance: dict[str, Registry] = {}
         self.__register_lock = RLock()
 
-    def add_register(self, name: str, register: Registry):
+    def add_register(self, register: Registry):
         """
         Try to add a register.
 
         Args:
-            name: The name of the register.
             register: The register to add.
 
         Raises:
             RegisterNameConflictError: If the name is already in use.
         """
         with self.__register_lock:
+            name = register.name
             if name in self.__registers_instance:
                 raise RegistryNameConflictError(name, self.__registers_instance[name])
 
@@ -225,7 +223,7 @@ class RuleDefConverter(Generic[T_contra], RuleDecorator[T_contra]):
         rule_def_name = self.alias or fn.__name__
 
         @wraps(fn)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Predicate[T_contra]:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> ComposablePredicate[T_contra]:
             return predicate(
                 lambda x: fn(x, *args, **kwargs),
                 name=rule_def_name,
@@ -237,11 +235,11 @@ class RuleDefConverter(Generic[T_contra], RuleDecorator[T_contra]):
         new_params = list(sig.parameters.values())[1:]
 
         wrapper.__annotations__ = {p.name: p.annotation for p in new_params}
-        wrapper.__annotations__["return"] = Predicate
+        wrapper.__annotations__["return"] = ComposablePredicate
 
         wrapper.__signature__ = inspect.Signature(  # ty:ignore[unresolved-attribute]
             parameters=new_params,
-            return_annotation=Predicate,
+            return_annotation=ComposablePredicate,
         )
 
         if self.registry is not None:

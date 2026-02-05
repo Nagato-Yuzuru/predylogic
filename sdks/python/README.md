@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/Nagato-Yuzuru/predylogic/branch/main/graph/badge.svg)](https://codecov.io/gh/Nagato-Yuzuru/predylogic)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/predylogic)](https://pypi.org/project/predylogic/)
 
-
+[![PyPI - Status](https://img.shields.io/pypi/status/predylogic)](https://pypi.org/project/predylogic/)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Nagato-Yuzuru/predylogic/python-ci.yml)
 [![Docs](https://img.shields.io/github/actions/workflow/status/Nagato-Yuzuru/predylogic/publish-docs.yml?label=docs)](https://nagato-yuzuru.github.io/predylogic)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)
@@ -18,12 +18,14 @@ An embedded, composable schema-driven predicate logic engine.
 > **Inspiration:** Heavily inspired by the architectural concepts discussed
 > by [ArjanCodes](https://www.youtube.com/watch?v=KqfMiuL3cx4).
 
+> We are still in v0.x, breaking changes may occur between minor versions.
+
 ## About Name
 
 > **predy** (adj.) *Archaic British. Nautical.*
 >1. (of a ship) prepared or ready for sailing or action.
 >2. to make the ship ready for battle (e.g., "predy the decks").\
-     — *Collins English Dictionary*
+    — *Collins English Dictionary*
 
 **predylogic** takes its name from this concept. It represents logic that is not hardcoded into the flow of battle, but
 defined, cleared for action, and "predy" for execution.
@@ -79,10 +81,15 @@ It provides the flexibility of a rule engine with the performance of native code
 
 ## Quick Start
 
+Install the package:
+> pip install predylogic
+
+> View the [online documentation](https://nagato-yuzuru.github.io/predylogic/quick_start)
+
 1. Define what can be checked. These are your stable building blocks.
     ```python
     from typing import TypedDict
-    from predylogic import Registry, Predicate
+    from predylogic import Registry, all_of, any_of
 
 
     # 1. Define the Context (Protocol or dataclass or Pydantic BaseModel, or any other type)
@@ -116,14 +123,20 @@ It provides the flexibility of a rule engine with the performance of native code
 
     ```python
     # Rule: "Safe AND (High Value OR In Target Region)"
-    # This structure validates against the schema derived from the registry.
-    policy = Predicate.all([
+    # This structure validates against the rule_engine derived from the registry.
+
+
+    # Alternatively, you may utilise the __and__, __or__, and __invert__ overloads (| & ~).
+    #   For extensive isomorphic combinations, use `all_of/any_of` to improve performance.
+
+    policy = all_of([
         is_safe(),
-        Predicate.any([
+        any_of([
             is_high_value(2000),
-            in_regions(["US", "EU"])
-        ])
+            in_regions(["US", "EU"]),
+        ]),
     ])
+
     # The 'policy' object is now compiled and ready for hot-loop execution.
     ```
 3. Execution & Trace
@@ -149,6 +162,76 @@ It provides the flexibility of a rule engine with the performance of native code
    > NOTE: The trace functionality is currently undergoing iteration. Additional information will be incorporated.
    > You can customize the `TraceStyle` to fit your logging system.
 
+4. Serde
+
+   PredyLogic supports the combination of rules through configuration orchestration.
+   #### Export JSON schema
+
+    ```python
+    from predylogic import SchemaGenerator
+
+
+    # here is the standard pydantic BaseModel.
+    Manifest = SchemaGenerator(registry).generate()
+    print(Manifest.model_json_schema())
+    ```
+   #### Import from configuration
+    ```python
+    from predylogic import RegistryManager,RuleEngine
+
+
+    manager = RegistryManager()
+    manager.add_register(registry)
+    json_data = """
+        {
+      "registry":"transaction_rules",
+      "rules":{
+        "policy":{
+          "node_type":"and",
+          "rules":[
+            {
+              "node_type":"leaf",
+              "rule":{
+                "rule_def_name":"is_safe"
+              }
+            },
+            {
+              "node_type":"or",
+              "rules":[
+                {
+                  "node_type":"leaf",
+                  "rule":{
+                    "rule_def_name":"is_high_value",
+                    "threshold":2000
+                  }
+                },
+                {
+                  "node_type":"leaf",
+                  "rule":{
+                    "rule_def_name":"check_region",
+                    "regions":[
+                      "US",
+                      "EU"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+    """
+
+    manifest = Manifest.model_validate_json(json_data)
+    engine = RuleEngine(manager)
+    engine.update_manifests(manifest)
+
+    policy = engine.get_predicate_handle("transaction_rules", "policy")
+    assert policy(tx_data) is False
+   ```
+
+   > PredyLogic permits runtime updates to predicates. For further details, please consult the online documentation.
 
 ## Under the Hood: The Engineering
 

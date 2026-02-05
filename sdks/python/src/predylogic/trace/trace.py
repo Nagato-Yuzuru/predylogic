@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generic, Literal, Protocol, TypeVar, overload
 
 if TYPE_CHECKING:
-    from predylogic.predicate import Predicate
-    from predylogic.types import LogicBinOp, LogicOp, PredicateNodeType
+    from predylogic.predicate import ComposablePredicate
+    from predylogic.typedefs import LogicBinOp, LogicOp, PredicateNodeType
 
 if sys.version_info < (3, 11):
     pass
@@ -85,7 +85,7 @@ class Trace(Generic[T_contra]):
     operator: Literal[PredicateNodeType, "PURE_BOOL", "SKIP"]
     children: tuple[Trace, ...] = field(default_factory=tuple)
 
-    node: Predicate[T_contra] | None = field(default=None, repr=False, compare=False)
+    node: ComposablePredicate[T_contra] | None = field(default=None, repr=False, compare=False)
     value: T_contra | None = field(default=None, repr=False)
     error: Exception | None = field(default=None, repr=False)
 

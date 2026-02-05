@@ -9,6 +9,7 @@ copyright: Maintained by <a href="https://Nagato-Yuzuru.com">Nagato-Yuzuru</a>.
 
 nav:
   - Home: index.md
+  - Quick Start: quick_start.md
   - Modules: modules.md
   - Design:
       - Overview: design/index.md

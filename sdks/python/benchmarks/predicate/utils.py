@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from textwrap import dedent
 
-from predylogic import Predicate, predicate
+from predylogic import all_of, predicate
 
 from .closure_predicate import Predicate as ClosurePredicate
 
@@ -46,5 +46,5 @@ class ClosureFactory(LogicFactory):
 class CurrentFactory(LogicFactory):
     def make_chain(self, depth: int):
         p = predicate(fn=true_fn, name="test fn")
-        p = Predicate.all([p] * (depth - 1))
+        p = all_of([p] * (depth - 1))
         return p
