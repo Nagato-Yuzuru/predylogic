@@ -78,7 +78,7 @@ def user_registry(registry_manager: RegistryManager) -> Registry[User]:
         """Check if user has specific name."""
         return user.name == name
 
-    registry_manager.add_register("user_registry", registry)
+    registry_manager.add_register(registry)
     return registry
 
 
@@ -97,7 +97,7 @@ def order_registry(registry_manager: RegistryManager) -> Registry[OrderCtx]:
         """Check if order is priority."""
         return order["is_priority"]
 
-    registry_manager.add_register("order_registry", registry)
+    registry_manager.add_register(registry)
     return registry
 
 
@@ -116,7 +116,7 @@ def product_registry(registry_manager: RegistryManager) -> Registry[Product]:
         """Check if product is in stock."""
         return product.in_stock
 
-    registry_manager.add_register("product_registry", registry)
+    registry_manager.add_register(registry)
     return registry
 
 

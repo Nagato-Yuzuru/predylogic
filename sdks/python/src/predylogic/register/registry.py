@@ -39,18 +39,18 @@ class RegistryManager:
         self.__registers_instance: dict[str, Registry] = {}
         self.__register_lock = RLock()
 
-    def add_register(self, name: str, register: Registry):
+    def add_register(self, register: Registry):
         """
         Try to add a register.
 
         Args:
-            name: The name of the register.
             register: The register to add.
 
         Raises:
             RegisterNameConflictError: If the name is already in use.
         """
         with self.__register_lock:
+            name = register.name
             if name in self.__registers_instance:
                 raise RegistryNameConflictError(name, self.__registers_instance[name])
 

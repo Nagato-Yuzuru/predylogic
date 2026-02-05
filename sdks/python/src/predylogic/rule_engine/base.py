@@ -119,7 +119,7 @@ class AndNode(BaseLogicNode[RuleUnionT]):
         title="AndNode",
     )
     node_type: Literal["and"] = Field("and", description="And node in the predicate tree")
-    rules: list[LogicNode[RuleUnionT]] = Field(..., min_length=2, description="All rules must pass")
+    rules: tuple[LogicNode[RuleUnionT], ...] = Field(..., min_length=2, description="All rules must pass")
 
 
 @final
@@ -132,7 +132,7 @@ class OrNode(BaseLogicNode[RuleUnionT]):
         title="OrNode",
     )
     node_type: Literal["or"] = Field("or", description="Or node in the predicate tree")
-    rules: list[LogicNode[RuleUnionT]] = Field(..., min_length=2, description="Any rule must pass")
+    rules: tuple[LogicNode[RuleUnionT], ...] = Field(..., min_length=2, description="Any rule must pass")
 
 
 @final
