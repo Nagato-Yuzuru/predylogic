@@ -349,7 +349,7 @@ class TestConcurrentExecution:
             assert result == expected
 
 
-class TestRacConditions:
+class TestRaceConditions:
     """Test potential race conditions."""
 
     def test_no_race_in_handle_cache_access(self, registry_manager, user_registry):
