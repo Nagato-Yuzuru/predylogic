@@ -166,8 +166,8 @@ Install the package:
 
 4. Serde:
 
-   PredyLogic supports the combination of rules through configuration orchestration.
-   #### Export JSON schema
+    PredyLogic supports the combination of rules through configuration orchestration.
+    #### Export JSON schema
     ```python
     from predylogic import SchemaGenerator
 
@@ -177,7 +177,7 @@ Install the package:
     print(Manifest.model_json_schema())
     ```
 
-   #### Import from configuration
+    #### Import from configuration
 
     ```python
     from predylogic import RegistryManager,RuleEngine
@@ -234,7 +234,7 @@ Install the package:
     assert policy(tx_data) is False
     ```
 
-   > PredyLogic permits runtime updates to predicates. For further details, please consult the online documentation.
+    > PredyLogic permits runtime updates to predicates. For further details, please consult the online documentation.
 
 ## Under the Hood: The Engineering
 
