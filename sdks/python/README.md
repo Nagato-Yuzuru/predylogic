@@ -139,7 +139,9 @@ Install the package:
 
     # The 'policy' object is now compiled and ready for hot-loop execution.
     ```
+
 3. Execution & Trace
+
     ```python
     tx_data = {"amount": 500, "region": "US", "is_fraud_flagged": True}
 
@@ -160,13 +162,12 @@ Install the package:
     #    ✅ in_regions
     ```
    > NOTE: The trace functionality is currently undergoing iteration. Additional information will be incorporated.
-   > You can customize the `TraceStyle` to fit your logging system.
+   You can customize the `TraceStyle` to fit your logging system.
 
-4. Serde
+4. Serde:
 
    PredyLogic supports the combination of rules through configuration orchestration.
    #### Export JSON schema
-
     ```python
     from predylogic import SchemaGenerator
 
@@ -175,7 +176,9 @@ Install the package:
     Manifest = SchemaGenerator(registry).generate()
     print(Manifest.model_json_schema())
     ```
+
    #### Import from configuration
+
     ```python
     from predylogic import RegistryManager,RuleEngine
 
@@ -229,7 +232,7 @@ Install the package:
 
     policy = engine.get_predicate_handle("transaction_rules", "policy")
     assert policy(tx_data) is False
-   ```
+    ```
 
    > PredyLogic permits runtime updates to predicates. For further details, please consult the online documentation.
 

@@ -20,13 +20,15 @@ Predylogic enables you to:
 
 ## 1. Registering Rule Definitions
 
-The first step is to create a **Registry** and register your rule definitions. A registry is a collection of rule definitions for a specific context type.
+The first step is to create a **Registry** and register your rule definitions. A registry is a collection of rule
+definitions for a specific context type.
 
 ### Basic Setup
 
 ```python
 from dataclasses import dataclass
 from predylogic import Registry
+
 
 # Define your context type
 @dataclass
@@ -35,8 +37,10 @@ class User:
     email: str
     is_premium: bool
 
+
 # Create a registry
 user_registry = Registry[User]("user_registry")
+
 
 # Register rule definitions using the decorator
 @user_registry.rule_def()
@@ -44,10 +48,12 @@ def is_adult(user: User, min_age: int = 18) -> bool:
     """Check if user is at least min_age years old."""
     return user.age >= min_age
 
+
 @user_registry.rule_def()
 def is_premium(user: User) -> bool:
     """Check if user has premium status."""
     return user.is_premium
+
 
 @user_registry.rule_def()
 def is_email_verified(user: User, domain: str = "example.com") -> bool:
@@ -64,6 +70,7 @@ def is_corporate_email(user: User, company_domain: str) -> bool:
     """Check if user has corporate email."""
     return user.email.endswith(f"@{company_domain}")
 
+
 # Register with explicit name
 producer = user_registry.register(is_corporate_email, "has_corporate_email")
 ```
@@ -73,23 +80,28 @@ producer = user_registry.register(is_corporate_email, "has_corporate_email")
 You can create separate registries for different context types:
 
 > Each context within a registry should be of the same type or satisfy LSP.
+
 ```python
 from typing import TypedDict
 
+
 class OrderContext(TypedDict):
-	total: float
-	item_count: int
-	is_bulk: bool
+    total: float
+    item_count: int
+    is_bulk: bool
+
 
 order_registry = Registry[OrderContext]("order_registry")
 
+
 @order_registry.rule_def()
 def high_value_order(order: OrderContext, min_total: float = 1000.0) -> bool:
-	return order["total"] >= min_total
+    return order["total"] >= min_total
+
 
 @order_registry.rule_def()
 def bulk_order(order: OrderContext) -> bool:
-	return order["is_bulk"]
+    return order["is_bulk"]
 ```
 
 ## 2. Exporting JSON Schemas
@@ -115,6 +127,7 @@ print(json_schema)
 ### Using the Schema
 
 The generated schema can be used to:
+
 - Validate rule configurations in external systems
 - Generate API documentation
 - Create UI forms for rule configuration
@@ -724,6 +737,7 @@ def create_age_rule(min_age: int):
         name=f"min_age_{min_age}"
     )
 
+
 rule_18 = create_age_rule(18)
 rule_21 = create_age_rule(21)
 ```
@@ -739,6 +753,7 @@ def build_user_filter(require_premium=False, min_age=18):
         return is_adult & is_premium
     else:
         return is_adult
+
 
 filter_vip = build_user_filter(require_premium=True, min_age=21)
 filter_standard = build_user_filter(require_premium=False, min_age=18)
