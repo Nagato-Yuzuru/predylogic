@@ -27,4 +27,4 @@ class RuleRevokedError(RuleEngineError):
         self.registry_name = registry_name
         self.rule_name = rule_name
 
-        super().__init__(f"Rule '{rule_name}' in {self.registry_name} revoked")
+        super().__init__(f"Rule '{rule_name}' in {self.registry_name} revoked or missing.")

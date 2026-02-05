@@ -39,5 +39,5 @@ docs-test:
 docs-build:
     uv run --project={{PY_SDK_PATH}} mkdocs build --clean
 # Build and serve the documentation of python
-docs-serce:
+docs-serve:
     uv run  --project={{PY_SDK_PATH}} mkdocs serve

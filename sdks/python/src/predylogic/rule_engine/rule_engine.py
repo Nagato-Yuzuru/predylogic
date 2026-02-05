@@ -145,8 +145,11 @@ class RuleEngine:
         """
         Retrieves the handle for the specified predicate.
 
-        This method is used to obtain a handle for a predicate based on the provided
+        This method is used to get a handle for a predicate based on the provided
         name and context type.
+
+        The returned Predicate is a handle encapsulating the original Predicate.
+        During `update_manifests`, atomic updates are performed on handles managed by the RuleEngine.
 
         Args:
             registry_name: name of the registry containing the predicate.
@@ -154,7 +157,9 @@ class RuleEngine:
             ctx_type: The type of context associated with the predicate.
 
         Returns:
-            Predicate[ctx_type]: The handle for the specified predicate.
+            The handle for the specified predicate.
+                If the predicate being looked up does not exist or has been deleted during a manifest update,
+                a predicate will be returned that raises a RuleRevokedError exception.
         """
 
         if (registry_handles := self._handles.get(registry_name)) and (handle := registry_handles.get(rule_name)):
@@ -175,8 +180,7 @@ class RuleEngine:
         """
         Updates the provided manifests to the current instance.
 
-        This method is expected to take one or more manifests of type RuleSetManifest
-        with a generic parameter T_cap.
+        This method is expected to take one or more manifests of type RuleSetManifest.
 
         Rules bearing identical names within the same registry will be updated. Handles managed by the engine,
         where updated rules exist on the chain, will likewise be updated.

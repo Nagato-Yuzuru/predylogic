@@ -33,8 +33,6 @@ class RuleDecorator(Protocol[T_contra]):  # noqa: D101
 class RegistryManager:
     """
     Manage registries.
-
-    # TODO: shall be responsible for a portion of the JSON Schema export functionality.
     """
 
     def __init__(self):

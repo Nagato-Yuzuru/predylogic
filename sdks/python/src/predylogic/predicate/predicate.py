@@ -142,7 +142,7 @@ class ComposablePredicate(Predicate[T_contra], Protocol[T_contra]):
         Combine this predicate with another using logical AND.
 
         To create a large number of consecutive __and__ combinations,
-        the `Predicate.all` method should be used to avoid the overhead of creating additional objects.
+        the `all_of` method should be used to avoid the overhead of creating additional objects.
         """
         ...
 
@@ -151,7 +151,7 @@ class ComposablePredicate(Predicate[T_contra], Protocol[T_contra]):
         Combine this predicate with another using logical or.
 
         To create a large number of consecutive __or__ combinations,
-        the `Predicate.any` method should be used to avoid the overhead of creating additional objects.
+        the `any_of` method should be used to avoid the overhead of creating additional objects.
         """
         ...
 
@@ -172,7 +172,12 @@ def all_of(predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePre
         predicates: Predicates are combined sequentially using `and`.
 
     """
-    return BasePredicate.all(predicates)
+    if not predicates:
+        msg = "Expected at least one predicate"
+        raise ValueError(msg)
+    if len(predicates) == 1:
+        return predicates[0]
+    return _PredicateAnd(children=tuple(predicates))
 
 
 def any_of(predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePredicate[T_contra]:
@@ -184,7 +189,12 @@ def any_of(predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePre
         predicates: Predicates are combined sequentially using `or`.
 
     """
-    return BasePredicate.any(predicates)
+    if not predicates:
+        msg = "Expected at least one predicate"
+        raise ValueError(msg)
+    if len(predicates) == 1:
+        return predicates[0]
+    return _PredicateOr(children=tuple(predicates))
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -302,40 +312,6 @@ class BasePredicate(ComposablePredicate[T_contra], ABC, Generic[T_contra]):
         """
 
         return _PredicateNot(op=self)
-
-    @classmethod
-    def all(cls, predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePredicate[T_contra]:
-        """
-        Use this method to combine multiple predicates,
-            thereby avoiding the object creation overhead associated with chained calls.
-
-        Args:
-            predicates: Predicates are combined sequentially using `and`.
-
-        """
-        if not predicates:
-            msg = "Expected at least one predicate"
-            raise ValueError(msg)
-        if len(predicates) == 1:
-            return predicates[0]
-        return _PredicateAnd(children=tuple(predicates))
-
-    @classmethod
-    def any(cls, predicates: Sequence[ComposablePredicate[T_contra]]) -> ComposablePredicate[T_contra]:
-        """
-        Use this method to combine multiple predicates,
-            thereby avoiding the object creation overhead associated with chained calls.
-
-        Args:
-            predicates: Predicates are combined sequentially using `or`.
-
-        """
-        if not predicates:
-            msg = "Expected at least one predicate"
-            raise ValueError(msg)
-        if len(predicates) == 1:
-            return predicates[0]
-        return _PredicateOr(children=tuple(predicates))
 
 
 def predicate(fn: PredicateFn[T_contra], *, name: str, desc: str | None = None) -> ComposablePredicate[T_contra]:
