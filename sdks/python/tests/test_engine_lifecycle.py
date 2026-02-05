@@ -10,14 +10,17 @@ Tests cover:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from predylogic import SchemaGenerator
 from predylogic.rule_engine import RuleEngine
-from predylogic.rule_engine.base import LeafNode, RefNode
+from predylogic.rule_engine.base import AndNode, LeafNode, RefNode
 from predylogic.rule_engine.errs import RuleRevokedError
 
-from .conftest import OrderCtx, User
+if TYPE_CHECKING:
+    from .conftest import OrderCtx, User
 
 
 class TestHotReload:
@@ -68,7 +71,11 @@ class TestHotReload:
         assert handle_v2(adult_user) is False  # Same behavior
 
     def test_hot_reload_multiple_rules(
-        self, registry_manager, user_registry, adult_user: User, minor_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
+        minor_user: User,
     ):
         """Verify hot reload works with multiple rules independently."""
         engine = RuleEngine(registry_manager)
@@ -114,7 +121,10 @@ class TestHotReload:
         assert handle_b_v1(adult_user) is True  # Unchanged
 
     def test_hot_reload_updates_referenced_rules(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify hot reload updates rules referenced by RefNodes."""
         engine = RuleEngine(registry_manager)
@@ -162,7 +172,10 @@ class TestLazyLinkingTombstone:
     """Test lazy linking and tombstone behavior for missing rules."""
 
     def test_tombstone_missing_rule_raises_revoked_error(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """
         CRITICAL: Verify missing rule creates tombstone raising RuleRevokedError.
@@ -191,7 +204,10 @@ class TestLazyLinkingTombstone:
         assert exc_info.value.rule_name == "rule_b"
 
     def test_tombstone_resolves_after_update(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """
         CRITICAL: Verify tombstone transitions to real logic after update.
@@ -250,7 +266,10 @@ class TestLazyLinkingTombstone:
         assert exc_info.value.rule_name == "non_existent_rule"
 
     def test_tombstone_in_logic_composition(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify tombstone in logic composition raises error."""
         engine = RuleEngine(registry_manager)
@@ -258,7 +277,6 @@ class TestLazyLinkingTombstone:
         manifest_model = schema_gen.generate()
 
         # AndNode with one valid rule and one missing ref
-        from predylogic.rule_engine.base import AndNode
 
         manifest = manifest_model(
             rules={
@@ -283,7 +301,9 @@ class TestHandleSingleton:
     """Test PredicateHandle singleton property."""
 
     def test_get_handle_multiple_times_returns_same_instance(
-        self, registry_manager, user_registry,
+        self,
+        registry_manager,
+        user_registry,
     ):
         """
         CRITICAL: Verify get_predicate_handle returns identical Python object.
@@ -311,7 +331,9 @@ class TestHandleSingleton:
         assert id(handle_1) == id(handle_2) == id(handle_3)
 
     def test_different_rules_have_different_handles(
-        self, registry_manager, user_registry,
+        self,
+        registry_manager,
+        user_registry,
     ):
         """Verify different rules have distinct handle instances."""
         engine = RuleEngine(registry_manager)
@@ -350,7 +372,12 @@ class TestPartialManifestUpdates:
     """Test partial manifest updates and registry isolation."""
 
     def test_updating_one_registry_doesnt_affect_another(
-        self, registry_manager, user_registry, order_registry, adult_user: User, priority_order: OrderCtx,
+        self,
+        registry_manager,
+        user_registry,
+        order_registry,
+        adult_user: User,
+        priority_order: OrderCtx,
     ):
         """Verify updating Registry A doesn't affect Registry B."""
         engine = RuleEngine(registry_manager)
@@ -444,7 +471,10 @@ class TestPartialManifestUpdates:
         assert handle_c(adult_user) is True  # Unchanged
 
     def test_remove_rule_from_manifest_preserves_handle(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify removing rule from manifest doesn't break existing handle."""
         engine = RuleEngine(registry_manager)
@@ -492,7 +522,10 @@ class TestEdgeCases:
         engine.update_manifests(manifest_empty)
 
     def test_update_before_any_get_handle(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify update_manifests works before any get_predicate_handle calls."""
         engine = RuleEngine(registry_manager)
@@ -513,7 +546,10 @@ class TestEdgeCases:
         assert handle(adult_user) is True
 
     def test_multiple_manifest_updates_in_sequence(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify multiple sequential updates work correctly."""
         engine = RuleEngine(registry_manager)

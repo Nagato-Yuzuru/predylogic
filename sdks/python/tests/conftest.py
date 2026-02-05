@@ -13,6 +13,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel
 
 from predylogic import Registry, RegistryManager
+from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode
 
 M = TypeVar("M", bound=BaseModel)
 # ============================================================================
@@ -186,7 +187,6 @@ def create_node_factories(rule_def_types):
     Returns:
         Tuple of (LeafFactory, RefFactory, AndFactory, OrFactory, NotFactory)
     """
-    from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode
 
     # Create factories for each node type with the correct generic
     leaf_factory = model_mock(LeafNode[rule_def_types])

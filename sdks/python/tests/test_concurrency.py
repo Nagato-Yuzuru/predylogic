@@ -39,7 +39,7 @@ class TestConcurrentHandleCreation:
         manifest_model = schema_gen.generate()
 
         mock_type = model_mock(manifest_model)
-        leaf_factory = model_mock(LeafNode[Any])
+        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])
         manifest = mock_type.build(
             rules={
                 "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"}),
@@ -75,7 +75,7 @@ class TestConcurrentHandleCreation:
         manifest_model = schema_gen.generate()
 
         mock_type = model_mock(manifest_model)
-        leaf_factory = model_mock(LeafNode[Any])
+        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])
         manifest = mock_type.build(
             rules={
                 "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"}),
@@ -228,7 +228,7 @@ class TestConcurrentManifestUpdates:
 
         with ThreadPoolExecutor(max_workers=num_readers + num_writers) as executor:
             futures = []
-            for i in range(num_readers):
+            for _ in range(num_readers):
                 futures.append(executor.submit(reader))
             for i in range(num_writers):
                 futures.append(executor.submit(writer, i))
@@ -361,7 +361,7 @@ class TestRacConditions:
         manifest_model = schema_gen.generate()
 
         mock_type = model_mock(manifest_model)
-        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])  # ty:ignore[invalid-type-form]
+        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])
         # Create manifest with multiple rules
         manifest = mock_type.build(
             rules={f"rule_{i}": leaf_factory.build(rule={"rule_def_name": "is_active"}) for i in range(20)},
@@ -404,7 +404,7 @@ class TestRacConditions:
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
         mock_type = model_mock(manifest_model)
-        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])  # ty:ignore[invalid-type-form]
+        leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])
         manifest = mock_type.build(
             rules={"rule_a": leaf_factory.build()},
         )
