@@ -116,8 +116,28 @@ Install the package:
     def is_safe(ctx: Transaction) -> bool:
         return not ctx["is_fraud_flagged"]
     ```
+    
+    The `@rule_def` decorator transforms your function into a **curried closure factory**.
+    In type hint terms, it shifts the signature from `Callable[Concatenate[T, **P], bool]` to `Callable[**P, Callable[[T], bool]]`.
 
-2. Dynamic Composition (Simulation)
+    For example:
+        You define this:
+    ```python
+    def is_high_value(ctx: Transaction, threshold: int = 1000) -> bool:
+        return ctx["amount"] >= threshold
+    ```
+    The decorator transforms it conceptually into this:
+
+    ```python
+    def is_high_value(threshold: int = 1000) -> Callable[[Transaction],bool]:
+        return lambda: ctx: ctx["amount"] >= threshold
+    ```
+    This allows you to "pre-configure" the rule with arguments (partially apply it):
+   `is_costly = is_high_value(2000)`
+
+
+
+3. Dynamic Composition (Simulation)
    > In a real app, this structure would be loaded from a JSON/YAML file or from database. Here we construct it to show
    > the API.
 
@@ -139,8 +159,9 @@ Install the package:
 
     # The 'policy' object is now compiled and ready for hot-loop execution.
     ```
+    Internally, the engine uses **JIT compilation** to flatten this composition into raw bytecode, so the execution speed matches handwritten `and`/`or` chains with close zero abstraction cost. (Detailed profiling is available in the ADRs).
 
-3. Execution & Trace
+4. Execution & Trace
 
     ```python
     tx_data = {"amount": 500, "region": "US", "is_fraud_flagged": True}
@@ -164,7 +185,7 @@ Install the package:
    > NOTE: The trace functionality is currently undergoing iteration. Additional information will be incorporated.
    You can customize the `TraceStyle` to fit your logging system.
 
-4. Serde:
+5. Serde:
 
     PredyLogic supports the combination of rules through configuration orchestration.
     #### Export JSON schema
