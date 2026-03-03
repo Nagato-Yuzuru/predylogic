@@ -159,7 +159,7 @@ Install the package:
 
     # The 'policy' object is now compiled and ready for hot-loop execution.
     ```
-    Internally, the engine uses **JIT compilation** to flatten this composition into raw bytecode, so the execution speed matches handwritten `and`/`or` chains with close zero abstraction cost. (Detailed profiling is available in the ADRs).
+    Internally, the engine uses **lazy bytecode compilation** to flatten this composition into raw bytecode, so the execution speed matches handwritten `and`/`or` chains with close zero abstraction cost. (Detailed profiling is available in the ADRs).
 
 4. Execution & Trace
 
@@ -270,15 +270,14 @@ We leverage this mathematical property to perform **AST Flattening**. A deeply n
 2000+)
 is algebraically reduced to a single N-ary operation during the compilation phase, enabling stack usage at runtime.
 
-### 2. Embedded JIT Compilation
+### 2. Lazy Bytecode Compilation
 
 Instead of interpreting the rule tree recursively (which is slow and stack-limited), PredyLogic acts as an embedded
 compiler.
 
 * **AOT Construction**: Rule definitions are validated and constructed as data structures.
-* **JIT Compilation**: Upon the first execution (or explicit compilation), the object tree is transformed into Python's
-  native
-  `ast` (Abstract Syntax Tree) and compiled into raw bytecode.
+* **Lazy Bytecode**: Compilation: Upon the first execution (or explicit compilation), the object tree is transformed into Python's
+  native `ast` (Abstract Syntax Tree) and compiled into into native Python bytecode on first execution and cached.
   This means your logic runs at the speed of native Python opcodes (`JUMP_IF_FALSE`, etc.), bypassing the overhead of
   function calls and object dispatch.
 
