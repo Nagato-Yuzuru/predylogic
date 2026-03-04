@@ -72,6 +72,9 @@ extra:
       link: https://pypi.org/project/predylogic
 
 markdown_extensions:
+  - mdx_truly_sane_lists:
+      nested_indent: 2
+      truly_sane: true
   - toc:
       permalink: true
   - pymdownx.arithmatex:

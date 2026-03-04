@@ -82,180 +82,198 @@ It provides the flexibility of a rule engine with the performance of native code
 ## Quick Start
 
 Install the package:
-> pip install predylogic
+
+```shell
+pip install predylogic
+```
 
 > View the [online documentation](https://nagato-yuzuru.github.io/predylogic/quick_start)
 
-1. Define what can be checked. These are your stable building blocks.
-    ```python
-    from typing import TypedDict
-    from predylogic import Registry, all_of, any_of
+### 1. Define what can be checked. These are your stable building blocks.
+
+```python
+from typing import TypedDict
+from predylogic import Registry, all_of, any_of
 
 
-    # 1. Define the Context (Protocol or dataclass or Pydantic BaseModel, or any other type)
-    class Transaction(TypedDict):
-        amount: int
-        region: str
-        is_fraud_flagged: bool
-
-    # 2. Initialize Registry
-    registry = Registry[Transaction]("transaction_rules")
+# 1. Define the Context (Protocol or dataclass or Pydantic BaseModel, or any other type)
+class Transaction(TypedDict):
+    amount: int
+    region: str
+    is_fraud_flagged: bool
 
 
-    # 3. Define Atomic Predicates
-    @registry.rule_def()
-    def is_high_value(ctx: Transaction, threshold: int = 1000) -> bool:
-        return ctx["amount"] >= threshold
-
-    # Define aliases using parameter
-    @registry.rule_def("check_region")
-    def in_regions(ctx: Transaction, regions: list[str]) -> bool:
-        return ctx["region"] in regions
-
-    @registry.rule_def()
-    def is_safe(ctx: Transaction) -> bool:
-        return not ctx["is_fraud_flagged"]
-    ```
-    
-    The `@rule_def` decorator transforms your function into a **curried closure factory**.
-    In type hint terms, it shifts the signature from `Callable[Concatenate[T, **P], bool]` to `Callable[**P, Callable[[T], bool]]`.
-
-    For example:
-        You define this:
-    ```python
-    def is_high_value(ctx: Transaction, threshold: int = 1000) -> bool:
-        return ctx["amount"] >= threshold
-    ```
-    The decorator transforms it conceptually into this:
-
-    ```python
-    def is_high_value(threshold: int = 1000) -> Callable[[Transaction],bool]:
-        return lambda: ctx: ctx["amount"] >= threshold
-    ```
-    This allows you to "pre-configure" the rule with arguments (partially apply it):
-   `is_costly = is_high_value(2000)`
+# 2. Initialize Registry
+registry = Registry[Transaction]("transaction_rules")
 
 
-
-3. Dynamic Composition (Simulation)
-   > In a real app, this structure would be loaded from a JSON/YAML file or from database. Here we construct it to show
-   > the API.
-
-    ```python
-    # Rule: "Safe AND (High Value OR In Target Region)"
-    # This structure validates against the rule_engine derived from the registry.
+# 3. Define Atomic Predicates
+@registry.rule_def()
+def is_high_value(ctx: Transaction, threshold: int = 1000) -> bool:
+    return ctx["amount"] >= threshold
 
 
-    # Alternatively, you may utilise the __and__, __or__, and __invert__ overloads (| & ~).
-    #   For extensive isomorphic combinations, use `all_of/any_of` to improve performance.
+# Define aliases using parameter
+@registry.rule_def("check_region")
+def in_regions(ctx: Transaction, regions: list[str]) -> bool:
+    return ctx["region"] in regions
 
-    policy = all_of([
+
+@registry.rule_def()
+def is_safe(ctx: Transaction) -> bool:
+    return not ctx["is_fraud_flagged"]
+```
+
+The `@rule_def` decorator transforms your function into a **curried closure factory**.
+In type hint terms, it shifts the signature from `Callable[Concatenate[T, **P], bool]` to
+`Callable[**P, Callable[[T], bool]]`.
+
+For example:
+You define this:
+
+```python
+def is_high_value(ctx: Transaction, threshold: int = 1000) -> bool:
+    return ctx["amount"] >= threshold
+```
+
+The decorator transforms it conceptually into this:
+
+```python
+def is_high_value(threshold: int = 1000) -> Callable[[Transaction], bool]:
+    return lambda: ctx: ctx["amount"] >= threshold
+```
+
+This allows you to "pre-configure" the rule with arguments (partially apply it):
+`is_costly = is_high_value(2000)`
+
+### 2. Dynamic Composition (Simulation)
+
+> In a real app, this structure would be loaded from a JSON/YAML file or from database. Here we construct it to show
+> the API.
+
+```python
+# Rule: "Safe AND (High Value OR In Target Region)"
+# This structure validates against the rule_engine derived from the registry.
+
+
+# Alternatively, you may utilise the __and__, __or__, and __invert__ overloads (| & ~).
+#   For extensive isomorphic combinations, use `all_of/any_of` to improve performance.
+
+policy = all_of(
+    [
         is_safe(),
-        any_of([
-            is_high_value(2000),
-            in_regions(["US", "EU"]),
-        ]),
-    ])
+        any_of(
+            [
+                is_high_value(2000),
+                in_regions(["US", "EU"]),
+            ]
+        ),
+    ]
+)
 
-    # The 'policy' object is now compiled and ready for hot-loop execution.
-    ```
-    Internally, the engine uses **lazy bytecode compilation** to flatten this composition into raw bytecode, so the execution speed matches handwritten `and`/`or` chains with close zero abstraction cost. (Detailed profiling is available in the ADRs).
+# The 'policy' object is now compiled and ready for hot-loop execution.
+```
 
-4. Execution & Trace
+Internally, the engine uses **lazy bytecode compilation** to flatten this composition into raw bytecode, so the
+execution speed matches handwritten `and`/`or` chains with close zero abstraction cost. (Detailed profiling is
+available in the ADRs).
 
-    ```python
-    tx_data = {"amount": 500, "region": "US", "is_fraud_flagged": True}
+### 3. Execution & Trace
 
-    # Execute (Fast Path)
-    assert policy(tx_data) is False
+```python
+tx_data = {"amount": 500, "region": "US", "is_fraud_flagged": True}
 
-    # Execute with Audit Log (Slow Path)
-    trace = policy(tx_data, trace=True, short_circuit=False)
-    assert not policy(tx_data)
-    print(trace)
-    # >>> Output:
-    # ❌ AND
-    #  ❌ is_safe
-    #    └─ Context: {'amount': 500, 'region': 'US', 'is_fraud_flagged': True}
-    #  ✅ OR
-    #    ❌ is_high_value
-    #      └─ Context: {'amount': 500, 'region': 'US', 'is_fraud_flagged': True}
-    #    ✅ in_regions
-    ```
-   > NOTE: The trace functionality is currently undergoing iteration. Additional information will be incorporated.
-   You can customize the `TraceStyle` to fit your logging system.
+# Execute (Fast Path)
+assert policy(tx_data) is False
 
-5. Serde:
+# Execute with Audit Log (Slow Path)
+trace = policy(tx_data, trace=True, short_circuit=False)
+assert not policy(tx_data)
+print(trace)
+# >>> Output:
+# ❌ AND
+#  ❌ is_safe
+#    └─ Context: {'amount': 500, 'region': 'US', 'is_fraud_flagged': True}
+#  ✅ OR
+#    ❌ is_high_value
+#      └─ Context: {'amount': 500, 'region': 'US', 'is_fraud_flagged': True}
+#    ✅ in_regions
+```
 
-    PredyLogic supports the combination of rules through configuration orchestration.
-    #### Export JSON schema
-    ```python
-    from predylogic import SchemaGenerator
+> NOTE: The trace functionality is currently undergoing iteration. Additional information will be incorporated.
+> You can customize the `TraceStyle` to fit your logging system.
 
+### 4. Serde:
 
-    # here is the standard pydantic BaseModel.
-    Manifest = SchemaGenerator(registry).generate()
-    print(Manifest.model_json_schema())
-    ```
+PredyLogic supports the combination of rules through configuration orchestration.
 
-    #### Import from configuration
+#### Export JSON schema
 
-    ```python
-    from predylogic import RegistryManager,RuleEngine
+```python
+from predylogic import SchemaGenerator
 
+# here is the standard pydantic BaseModel.
+Manifest = SchemaGenerator(registry).generate()
+print(Manifest.model_json_schema())
+```
 
-    manager = RegistryManager()
-    manager.add_register(registry)
-    json_data = """
+#### Import from configuration
+
+```python
+from predylogic import RegistryManager, RuleEngine
+
+manager = RegistryManager()
+manager.add_register(registry)
+json_data = """
+    {
+  "registry":"transaction_rules",
+  "rules":{
+    "policy":{
+      "node_type":"and",
+      "rules":[
         {
-      "registry":"transaction_rules",
-      "rules":{
-        "policy":{
-          "node_type":"and",
+          "node_type":"leaf",
+          "rule":{
+            "rule_def_name":"is_safe"
+          }
+        },
+        {
+          "node_type":"or",
           "rules":[
             {
               "node_type":"leaf",
               "rule":{
-                "rule_def_name":"is_safe"
+                "rule_def_name":"is_high_value",
+                "threshold":2000
               }
             },
             {
-              "node_type":"or",
-              "rules":[
-                {
-                  "node_type":"leaf",
-                  "rule":{
-                    "rule_def_name":"is_high_value",
-                    "threshold":2000
-                  }
-                },
-                {
-                  "node_type":"leaf",
-                  "rule":{
-                    "rule_def_name":"check_region",
-                    "regions":[
-                      "US",
-                      "EU"
-                    ]
-                  }
-                }
-              ]
+              "node_type":"leaf",
+              "rule":{
+                "rule_def_name":"check_region",
+                "regions":[
+                  "US",
+                  "EU"
+                ]
+              }
             }
           ]
         }
-      }
+      ]
     }
-    """
+  }
+}
+"""
 
-    manifest = Manifest.model_validate_json(json_data)
-    engine = RuleEngine(manager)
-    engine.update_manifests(manifest)
+manifest = Manifest.model_validate_json(json_data)
+engine = RuleEngine(manager)
+engine.update_manifests(manifest)
 
-    policy = engine.get_predicate_handle("transaction_rules", "policy")
-    assert policy(tx_data) is False
-    ```
+policy = engine.get_predicate_handle("transaction_rules", "policy")
+assert policy(tx_data) is False
+```
 
-    > PredyLogic permits runtime updates to predicates. For further details, please consult the online documentation.
+> PredyLogic permits runtime updates to predicates. For further details, please consult the online documentation.
 
 ## Under the Hood: The Engineering
 
@@ -276,7 +294,8 @@ Instead of interpreting the rule tree recursively (which is slow and stack-limit
 compiler.
 
 * **AOT Construction**: Rule definitions are validated and constructed as data structures.
-* **Lazy Bytecode**: Compilation: Upon the first execution (or explicit compilation), the object tree is transformed into Python's
+* **Lazy Bytecode**: Compilation: Upon the first execution (or explicit compilation), the object tree is transformed
+  into Python's
   native `ast` (Abstract Syntax Tree) and compiled into into native Python bytecode on first execution and cached.
   This means your logic runs at the speed of native Python opcodes (`JUMP_IF_FALSE`, etc.), bypassing the overhead of
   function calls and object dispatch.
@@ -302,3 +321,25 @@ This transforms a generic multi-argument function into a specialized single-argu
 **This makes testing trivial: since your atomic rule definitions are typically pure functions, you can verify complex
 business logic with simple unit tests—no mocks,
 no fixtures, and no database required.**
+
+## Roadmap
+
+Next up: a minimal DSL to replace raw JSON/YAML configuration, followed by a CLI with schema-driven validation and LSP
+support.
+
+For the configuration [above](#4-serde) json, using DSL looks like
+
+```python
+## transaction_rules
+
+policy = is_safe() & (is_high_value(2000) | check_region(regions=["US", "EU"]))
+```
+
+Or
+
+```python
+## transaction_rules
+
+expensive = is_high_value(2000)
+policy = is_safe() & (expensive | check_region(regions=["US", "EU"]))
+```
