@@ -42,7 +42,7 @@ def make_leaf_raiser(calls: dict[str, int], key: str, exc: Exception):
 
 
 def _flatten_ops(t: Trace) -> list[str]:
-    ops = [t.operator]
+    ops: list[str] = [t.operator]
     for c in t.children:
         ops.extend(_flatten_ops(c))
     return ops

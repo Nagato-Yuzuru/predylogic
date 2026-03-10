@@ -511,10 +511,12 @@ class Compiler:
         while stack:
             node = stack.pop()
             if not getattr(node, "lineno", None):
-                node.lineno = 1  # ty:ignore[invalid-assignment]
-                node.col_offset = 0  # ty:ignore[invalid-assignment]
-                node.end_lineno = 1  # ty:ignore[invalid-assignment]
-                node.end_col_offset = 0  # ty:ignore[invalid-assignment]
+                node = cast("ast.expr | ast.stmt", node)
+
+                node.lineno = 1
+                node.col_offset = 0
+                node.end_lineno = 1
+                node.end_col_offset = 0
 
             stack.extend(ast.iter_child_nodes(node))
 
@@ -562,7 +564,7 @@ class Compiler:
                 continue
 
             if not visited:
-                stack.append((node, True, fallback))
+                stack.append(self.CompileStack(node, visited=True, fallback=fallback))
                 match node:
                     case _PredicateLeaf() as p:
                         results.append(self._create_ast_leaf(p, fallback))
@@ -578,11 +580,13 @@ class Compiler:
 
                         child_fallback = node_type != "or"
                         # Stack is LIFO: push in reverse so evaluation is left-to-right.
-                        stack.extend((child, False, child_fallback) for child in chain)
+                        stack.extend(
+                            self.CompileStack(child, visited=False, fallback=child_fallback) for child in chain
+                        )
 
                     case _PredicateNot(op=op):
                         # Reversing the outer layer's expectations.
-                        stack.append((op, False, not fallback))
+                        stack.append(self.CompileStack(op, visited=False, fallback=not fallback))
                     case tuple():
                         pass
                     case _:
