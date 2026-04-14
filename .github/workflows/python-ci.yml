@@ -16,9 +16,6 @@ on:
 jobs:
   quality-python:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sdks/python
     steps:
       - name: Check out
         uses: actions/checkout@v6
@@ -32,10 +29,10 @@ jobs:
         uses: ./.github/actions/setup-python-env
 
       - name: Run pre-commit
-        run: uv run pre-commit run
+        run: uv run pre-commit run --all-files
 
       - name: Run checks
-        run: just check
+        run: just py-check
 
   tests-and-type-check:
     permissions:
@@ -48,7 +45,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: sdks/python
     steps:
       - name: Check out
         uses: actions/checkout@v6
@@ -59,7 +55,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests
-        run: uv run pytest tests --cov=src --cov-config=pyproject.toml --cov-report=xml
+        run: uv run --directory sdks/python pytest tests --cov=src --cov-config=pyproject.toml --cov-report=xml
 
       - name: Check typing
         run: uv run ty check
@@ -82,4 +78,4 @@ jobs:
         uses: ./.github/actions/setup-python-env
 
       - name: Check if documentation can be built
-        run: uv run --project=sdks/python mkdocs build -s
+        run: uv run mkdocs build -s

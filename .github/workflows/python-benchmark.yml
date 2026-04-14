@@ -20,9 +20,6 @@ jobs:
   benchmarks:
     name: Run CodSpeed
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sdks/python
     steps:
       - name: Check out
         uses: actions/checkout@v6

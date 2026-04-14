@@ -29,5 +29,5 @@ runs:
       uses: extractions/setup-just@v3
 
     - name: Install Python dependencies
-      run: uv sync --project=sdks/python --frozen --group=dev --group=test
+      run: uv sync --frozen --all-packages --group=dev --group=test
       shell: bash
