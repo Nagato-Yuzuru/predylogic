@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TypedDict
 
 import pytest
-
 from predylogic import Trace, predicate
 
 

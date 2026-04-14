@@ -1,0 +1,121 @@
+[project]
+name = "predylogic-workspace"
+requires-python = ">=3.10,<4.0"
+version = "0.0.0"
+
+[dependency-groups]
+dev = [
+  "pre-commit>=4.5.1",
+  "ty>=0.0.14",
+  "ruff>=0.14.14",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.1",
+  "mkdocstrings[python]>=1.0.2",
+  "mkdocs-glightbox>=0.5.2",
+  "mdx-truly-sane-lists>=1.3",
+]
+
+[tool.uv.workspace]
+members = ["sdks/python"]
+
+# --- ty ---
+
+[tool.ty.environment]
+python-version = "3.10"
+
+[tool.ty.src]
+include = ["sdks/python/src", "sdks/python/tests"]
+
+[[tool.ty.overrides]]
+include = ["sdks/python/tests/**"]
+[tool.ty.overrides.rules]
+invalid-argument-type = "ignore"
+invalid-type-form = "ignore"
+
+# --- ruff ---
+
+[tool.ruff]
+fix = true
+include = ["sdks/python/**/*.py", "sdks/python/**/*.pyi"]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+ignore = [
+  "ANN204",
+  "S101",
+  "E501",
+  "E731",
+  "D107",
+  "D104",
+  "D105",
+  "D100",
+  "D200",
+  "D202",
+  "D203",
+  "D205",
+  "D212",
+]
+select = [
+  "YTT",
+  "ANN",
+  "ASYNC",
+  "D",
+  "FBT",
+  "TID",
+  "N",
+  "S",
+  "B",
+  "G",
+  "A",
+  "C4",
+  "T10",
+  "SIM",
+  "I",
+  "C90",
+  "E",
+  "PLC",
+  "TD005",
+  "TD006",
+  "TD007",
+  "TC",
+  "T100",
+  "PLE",
+  "PLR",
+  "PLW",
+  "W",
+  "F",
+  "PGH",
+  "FURB",
+  "UP",
+  "RUF",
+  "COM",
+  "TRY",
+  "EM",
+]
+
+[tool.ruff.lint.flake8-annotations]
+suppress-none-returning = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.per-file-ignores]
+"sdks/python/benchmarks/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
+"sdks/python/prof/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
+"sdks/python/src/predylogic/_version.py" = ["ALL"]
+"sdks/python/tests/*" = [
+  "ANN",
+  "D",
+  "PLR0913",
+  "PLR2004",
+  "FBT",
+  "TC",
+  "PLC0415",
+]
+
+[tool.ruff.format]
+preview = true

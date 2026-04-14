@@ -11,10 +11,9 @@ Tests cover:
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from predylogic import Registry, SchemaGenerator
 from predylogic.rule_engine.base import LeafNode, RuleSetManifest
+from pydantic import ValidationError
 
 from .conftest import OrderCtx, Product, User
 

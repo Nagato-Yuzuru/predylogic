@@ -11,13 +11,12 @@ Tests cover:
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from predylogic import SchemaGenerator
 from predylogic.register.errs import RegistryNotFoundError
 from predylogic.rule_engine import RuleEngine
 from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode
 from predylogic.rule_engine.errs import RuleDefRingError
+from pydantic import ValidationError
 
 from .conftest import OrderCtx, Product, User
 
@@ -26,7 +25,11 @@ class TestBasicLeafCompilation:
     """Test basic LeafNode compilation and execution."""
 
     def test_compile_simple_leaf_node(
-        self, registry_manager, user_registry, adult_user: User, minor_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
+        minor_user: User,
     ):
         """Verify basic LeafNode compiles and executes correctly."""
         engine = RuleEngine(registry_manager)
@@ -47,7 +50,10 @@ class TestBasicLeafCompilation:
         assert handle(minor_user) is False
 
     def test_compile_leaf_with_default_parameter(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify LeafNode with default parameter values works."""
         engine = RuleEngine(registry_manager)
@@ -67,7 +73,10 @@ class TestBasicLeafCompilation:
         assert handle(adult_user) is True  # 25 >= 18
 
     def test_compile_leaf_with_no_parameters(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify LeafNode with no parameters compiles correctly."""
         engine = RuleEngine(registry_manager)
@@ -114,7 +123,11 @@ class TestLogicComposition:
     """Test AndNode, OrNode, NotNode compilation."""
 
     def test_and_node_compilation(
-        self, registry_manager, user_registry, adult_user: User, minor_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
+        minor_user: User,
     ):
         """Verify AndNode compiles and executes with AND logic."""
         engine = RuleEngine(registry_manager)
@@ -141,7 +154,11 @@ class TestLogicComposition:
         assert handle(minor_user) is False
 
     def test_or_node_compilation(
-        self, registry_manager, user_registry, adult_user: User, minor_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
+        minor_user: User,
     ):
         """Verify OrNode compiles and executes with OR logic."""
         engine = RuleEngine(registry_manager)
@@ -188,7 +205,10 @@ class TestLogicComposition:
         assert handle(adult_user) is False
 
     def test_nested_logic_composition(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify nested logic nodes compile correctly."""
         engine = RuleEngine(registry_manager)
@@ -249,7 +269,10 @@ class TestStaticRefNode:
     """Test RefNode resolution where both rules exist in manifest."""
 
     def test_static_ref_node_resolution(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify RefNode resolves to referenced rule when both exist."""
         engine = RuleEngine(registry_manager)
@@ -271,7 +294,10 @@ class TestStaticRefNode:
         assert handle_a(adult_user) is True
 
     def test_ref_node_with_logic_composition(
-        self, registry_manager, user_registry, adult_user: User,
+        self,
+        registry_manager,
+        user_registry,
+        adult_user: User,
     ):
         """Verify RefNode works within logic compositions."""
         engine = RuleEngine(registry_manager)
@@ -347,7 +373,6 @@ class TestErrorCases:
         # The SchemaGenerator creates a discriminated union that only allows registered rule_def_names,
         # so attempting to create a manifest with an unregistered rule_def_name will raise ValidationError.
 
-        engine = RuleEngine(registry_manager)
         schema_gen = SchemaGenerator(user_registry)
         manifest_model = schema_gen.generate()
 
@@ -369,8 +394,6 @@ class TestErrorCases:
 
     def test_cyclic_dependency_raises_ring_error(self, registry_manager, user_registry):
         """Verify RuleDefRingError raised for cyclic RefNode dependencies."""
-        engine = RuleEngine(registry_manager)
-
         # Create manifest with cycle: A->B->C->A
         from predylogic.rule_engine.base import RuleSetManifest
 
@@ -390,8 +413,6 @@ class TestErrorCases:
 
     def test_self_referencing_rule_raises_ring_error(self, registry_manager, user_registry):
         """Verify RuleDefRingError raised for self-referencing rule."""
-        engine = RuleEngine(registry_manager)
-
         from predylogic.rule_engine.base import RuleSetManifest
 
         manifest_dict = {
@@ -411,7 +432,10 @@ class TestDiverseContextTypes:
     """Test compilation works with diverse context types."""
 
     def test_typeddict_context_compilation(
-        self, registry_manager, order_registry, priority_order: OrderCtx,
+        self,
+        registry_manager,
+        order_registry,
+        priority_order: OrderCtx,
     ):
         """Verify compilation works with TypedDict context."""
         engine = RuleEngine(registry_manager)
@@ -436,7 +460,10 @@ class TestDiverseContextTypes:
         assert handle(priority_order) is True
 
     def test_plain_class_context_compilation(
-        self, registry_manager, product_registry, expensive_product: Product,
+        self,
+        registry_manager,
+        product_registry,
+        expensive_product: Product,
     ):
         """Verify compilation works with plain class context."""
         engine = RuleEngine(registry_manager)

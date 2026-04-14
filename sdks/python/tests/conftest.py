@@ -10,10 +10,9 @@ from typing import TypedDict, TypeVar, cast
 
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
-from pydantic import BaseModel
-
 from predylogic import Registry, RegistryManager
 from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode
+from pydantic import BaseModel
 
 M = TypeVar("M", bound=BaseModel)
 # ============================================================================

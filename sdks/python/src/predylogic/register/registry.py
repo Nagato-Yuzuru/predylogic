@@ -220,14 +220,14 @@ class RuleDefConverter(Generic[T_contra], RuleDecorator[T_contra]):
         if self._needs_alias(fn) and self.alias is None:
             raise RuleDefNotNamedError()
 
-        rule_def_name = self.alias or fn.__name__
+        rule_def_name = self.alias or getattr(fn, "__name__", "")
 
         @wraps(fn)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> ComposablePredicate[T_contra]:
             return predicate(
                 lambda x: fn(x, *args, **kwargs),
                 name=rule_def_name,
-                desc=fn.__doc__ or fn.__name__ or None,
+                desc=getattr(fn, "__doc__", None) or getattr(fn, "__name__", None),
             )
 
         sig = inspect.signature(fn)

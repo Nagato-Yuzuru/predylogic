@@ -13,7 +13,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-
 from predylogic import SchemaGenerator
 from predylogic.rule_engine import RuleEngine
 from predylogic.rule_engine.base import AndNode, LeafNode, RefNode

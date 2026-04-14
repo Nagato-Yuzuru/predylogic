@@ -68,7 +68,7 @@ cd predylogic
    linting):
 
 ```bash
-just py-install
+just install
 ```
 
 5. Create a branch for local development:
@@ -81,7 +81,7 @@ Now you can make your changes locally.
 
 6. Don't forget to add test cases for your added functionality to the `tests` directory.
 7. When you're done making changes, run the code quality suite.
-   This runs dependency checks (`tach`, `deptry`), type checking (`ty`), and linters:
+   This runs type checking (`ty`), linting (`ruff`), and dependency checks (`deptry`, `tach`):
 
 ```bash
 just py-check
@@ -98,7 +98,7 @@ just py-test
 For example, when modifying Python documentation:
 
 ```bash
-just py-docs
+just docs-serve
 ```
 
 10. Commit your changes and push your branch to GitHub.

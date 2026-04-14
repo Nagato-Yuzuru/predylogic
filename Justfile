@@ -1,43 +1,82 @@
-set shell := ["bash", "-c"]
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+PY_SDK := "sdks/python"
 
 [private]
 default:
     @just --list
 
-PY_SDK_PATH := "./sdks/python"
+# Install dependencies and pre-commit hooks
+install *groups="dev test":
+    uv sync --all-packages {{ if groups == "all" { "--all-groups" } else { prepend("--group ", groups) } }}
+    uv run pre-commit install
+    uv run pre-commit install --hook-type commit-msg
 
-# Install the python virtual environment and install the pre-commit hooks
-@py-install all="false":
-    echo "Creating python virtual environment using uv"
-    just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile install
-    just pre-commit-install
+# Run Python code quality checks
+py-check:
+    @echo "Checking lock file consistency with 'pyproject.toml'"
+    uv lock --locked
+    @echo "Static type checking: Running ty"
+    uv run ty check
+    @echo "Linting: Running ruff"
+    uv run ruff check
+    @echo "Checking for obsolete dependencies: Running deptry"
+    uv run --directory {{ PY_SDK }} deptry src
+    @echo "Checking for dependency architecture: Running tach"
+    uv run --directory {{ PY_SDK }} tach check
 
-@pre-commit-install:
-    uv run pre-commit install && uv run pre-commit  install --hook-type commit-msg
+# Test the Python code with pytest
+py-test:
+    @echo "Testing code: Running pytest"
+    uv run --directory {{ PY_SDK }} pytest --cov --cov-config=pyproject.toml --cov-report=xml
 
-# Run python code quality tools.
-@py-check:
-    just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile check
+test: py-test
 
-# Test the python code with pytest
-@py-test:
-    just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile test
+# Build Python wheel file
+py-build: py-clean-build
+    @echo "Creating wheel file"
+    uvx --from build pyproject-build --installer uv --outdir {{ PY_SDK }}/dist {{ PY_SDK }}
 
-@test: py-test
+# Publish Python package
+py-publish:
+    uv publish --directory {{ PY_SDK }}
 
-# Build python wheel file
-@py-build:
-    just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile build
+# Clean Python build artifacts
+py-clean-build:
+    @echo "Removing build artifacts"
+    rm -rf {{ PY_SDK }}/dist
 
-@py-publish:
-    just -d {{ PY_SDK_PATH }} -f {{ PY_SDK_PATH }}/Justfile publish
-# Test if documentation of python can be built without warnings or errors
+# Build and test documentation
 docs-test:
-    uv run --project={{PY_SDK_PATH}} mkdocs build -s
+    uv run mkdocs build -s
 
-# Build documentation of python
+# Build documentation
 docs-build:
-    uv run --project={{PY_SDK_PATH}} mkdocs build --clean
-# Build and serve the documentation of python
+    uv run mkdocs build --clean
+
+# Build and serve documentation
 docs-serve:
-    uv run  --project={{PY_SDK_PATH}} mkdocs serve
+    uv run mkdocs serve
+
+# CPU profiling with py-spy (requires sudo)
+py-prof-cpu output="sdks/python/prof/cpu_prof.svg" depth="2000" iter="100" mode="current":
+    sudo PYTHONPATH="{{ PY_SDK }}/src:$PYTHONPATH" \
+    uv run --directory {{ PY_SDK }} --group prof py-spy record \
+    -o {{ output }} \
+    --format flamegraph \
+    --rate 20 \
+    -- \
+    python -m prof.profile_predicate --depth={{ depth }} --iter={{ iter }} --mode={{ mode }}
+    sudo chown "$(id -un):$(id -gn)" {{ output }}
+    chmod u+rw {{ output }}
+
+# Memory profiling with memray
+py-prof-mem binoutput="sdks/python/prof/memory.bin" output="sdks/python/prof/mem_flamegraph.html" depth="2000" iter="100" mode="current":
+    uv run --directory {{ PY_SDK }} --group prof memray run \
+        --force \
+        -o {{ binoutput }} \
+        -m prof.profile_predicate --depth {{ depth }} --iter={{ iter }} --mode={{ mode }} \
+    && uv run --directory {{ PY_SDK }} --group prof memray flamegraph \
+        --force \
+        -o {{ output }} \
+        {{ binoutput }}

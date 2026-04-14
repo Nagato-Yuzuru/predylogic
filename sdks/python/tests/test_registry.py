@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import pytest
-
 from predylogic import is_predicate
 from predylogic.register.errs import RegistryNameConflictError, RuleDefConflictError, RuleDefNotNamedError
 from predylogic.register.registry import Registry, RegistryManager
