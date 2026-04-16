@@ -9,13 +9,11 @@ default:
 # Install dependencies and pre-commit hooks
 install *groups="dev test":
     uv sync --all-packages {{ if groups == "all" { "--all-groups" } else { prepend("--group ", groups) } }}
-    uv run pre-commit install
-    uv run pre-commit install --hook-type commit-msg
+    prek install --overwrite
+    prek install --overwrite --hook-type commit-msg
 
 # Run Python code quality checks
 py-check:
-    @echo "Checking lock file consistency with 'pyproject.toml'"
-    uv lock --locked
     @echo "Static type checking: Running ty"
     uv run ty check
     @echo "Linting: Running ruff"

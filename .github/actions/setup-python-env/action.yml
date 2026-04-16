@@ -1,15 +1,11 @@
 name: "Setup Python Environment"
-description: "Set up Python environment for the given Python version"
+description: "Install toolchain via mise and sync Python deps"
 
 inputs:
   python-version:
     description: "Python version to use"
     required: true
     default: "3.10"
-  uv-version:
-    description: "uv version to use"
-    required: true
-    default: "0.9.21"
 
 runs:
   using: "composite"
@@ -18,15 +14,10 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v7
+    - name: Install toolchain (uv, just, prek, git-cliff)
+      uses: jdx/mise-action@v3
       with:
-        version: ${{ inputs.uv-version }}
-        enable-cache: 'true'
-        cache-suffix: ${{ matrix.python-version }}
-
-    - name: Install just
-      uses: extractions/setup-just@v3
+        cache: true
 
     - name: Install Python dependencies
       run: uv sync --frozen --all-packages --group=dev --group=test
