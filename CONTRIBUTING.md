@@ -46,79 +46,79 @@ If you are proposing a new feature:
 # Get Started!
 
 Ready to contribute? Here's how to set up `predylogic` for local development.
-Please note this documentation assumes you already have **`uv`**, **`just`**, and **`Git`** installed and ready to go.
 
-1. Fork the `predylogic` repo on GitHub.
+This project uses **[`mise`](https://mise.jdx.dev)** to manage its toolchain (`uv`, `just`, `prek`, `git-cliff`).
+The only prerequisites you need on your machine are **`mise`** and **`Git`** — everything else is pinned in `mise.toml`
+and installed automatically.
 
-2. Clone your fork locally:
+1. Fork the `predylogic` repo on GitHub and clone your fork:
 
-```bash
-cd <directory_in_which_repo_should_be_created>
-git clone git@github.com:YOUR_NAME/predylogic.git
-```
+    ```bash
+    git clone git@github.com:YOUR_NAME/predylogic.git
+    cd predylogic
+    ```
 
-3. Navigate into the directory:
+2. Trust and install the toolchain:
 
-```bash
-cd predylogic
-```
+    ```bash
+    mise trust
+    mise install
+    ```
 
-4. Install the environment and hooks.
-   This command will use `uv` to create a virtual environment and install `pre-commit` hooks (including commit-message
-   linting):
+    This reads `mise.toml` and installs `uv`, `just`, `prek`, and `git-cliff` at the versions declared there. Make sure
+    mise shims are active in your shell (`mise activate`, see the mise docs).
 
-```bash
-just install
-```
+3. Install Python dependencies and the git hooks:
 
-5. Create a branch for local development:
+    ```bash
+    just install
+    ```
 
-```bash
-git checkout -b name-of-your-bugfix-or-feature
-```
+    This runs `uv sync` and installs `prek` hooks for both `pre-commit` and `commit-msg`.
 
-Now you can make your changes locally.
+4. Create a branch for local development:
 
-6. Don't forget to add test cases for your added functionality to the `tests` directory.
-7. When you're done making changes, run the code quality suite.
-   This runs type checking (`ty`), linting (`ruff`), and dependency checks (`deptry`, `tach`):
+    ```bash
+    git checkout -b name-of-your-bugfix-or-feature
+    ```
 
-```bash
-just py-check
-```
+5. Add tests for any new behavior under `sdks/python/tests/`.
 
-8. Validate that all unit tests are passing:
+6. Run the quality suite — this runs type checking (`ty`), linting (`ruff`), and dependency checks (`deptry`, `tach`):
 
-```bash
-just py-test
-```
+    ```bash
+    just py-check
+    ```
 
-9. (Optional) If you modified the documentation, you can preview it locally:
+7. Run the tests:
 
-For example, when modifying Python documentation:
+    ```bash
+    just py-test
+    ```
 
-```bash
-just docs-serve
-```
+8. (Optional) Preview documentation changes:
 
-10. Commit your changes and push your branch to GitHub.
-    **Note:** We follow **Conventional Commits**. Your commit message will be verified by the `commit-msg` hook
-    installed in step 4.
+    ```bash
+    just docs-serve
+    ```
 
-```bash
-git add .
-git commit -m "feat: add support for new predicate types"
-# or "fix: resolve issue with registry lookup"
-git push origin name-of-your-bugfix-or-feature
-```
+9. Stage and commit your changes. **Stage specific files** rather than `git add .` to avoid pulling in local artifacts
+   (profile output, coverage files, notes). We follow **Conventional Commits**; the `commit-msg` hook installed in
+   step 3 will reject commits that don't conform:
 
-11. Submit a pull request through the GitHub website.
+    ```bash
+    git add path/to/changed/files
+    git commit -m "feat: add support for new predicate types"
+    git push origin name-of-your-bugfix-or-feature
+    ```
+
+10. Open a pull request against `main` on GitHub.
 
 # Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include tests.
-2. The pull request must pass all CI/CD checks (linting, testing, type checking).
-3. If the pull request adds functionality, the docs should be updated.
-   Put your new functionality into a function with a docstring, and add the feature to the list in `README.md`.
+1. The pull request includes tests for the new or changed behavior.
+2. The pull request passes all CI checks (`prek`, `ty`, `ruff`, `deptry`, `tach`, pytest across the Python matrix).
+3. Public API changes are reflected in Google-style docstrings on `src/`, and — if user-visible — in `docs/` and the
+   `README.md` feature narrative.

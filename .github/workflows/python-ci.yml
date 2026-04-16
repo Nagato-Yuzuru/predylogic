@@ -20,16 +20,13 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - uses: actions/cache@v5
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
 
-      - name: Run pre-commit
-        run: uv run pre-commit run --all-files
+      - name: Run prek
+        uses: j178/prek-action@v2
+        with:
+          args: --all-files --show-diff-on-failure
 
       - name: Run checks
         run: just py-check
