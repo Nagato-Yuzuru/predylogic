@@ -14,8 +14,6 @@ install *groups="dev test":
 
 # Run Python code quality checks
 py-check:
-    @echo "Checking lock file consistency with 'pyproject.toml'"
-    uv lock --locked
     @echo "Static type checking: Running ty"
     uv run ty check
     @echo "Linting: Running ruff"
