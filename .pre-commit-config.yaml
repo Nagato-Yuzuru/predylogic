@@ -34,8 +34,8 @@ repos:
         name: ty check
         entry: uv run ty check
         language: system
-        types: [ python, pyi ]
-        always_run: true
+        pass_filenames: false
+        types_or: [ python, pyi ]
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
     hooks:
