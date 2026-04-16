@@ -6,7 +6,7 @@ PY_SDK := "sdks/python"
 default:
     @just --list
 
-# Install dependencies and pre-commit hooks
+# Install dependencies and git hooks
 install *groups="dev test":
     uv sync --all-packages {{ if groups == "all" { "--all-groups" } else { prepend("--group ", groups) } }}
     prek install --overwrite
