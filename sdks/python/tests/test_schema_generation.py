@@ -79,7 +79,9 @@ class TestParameterMapping:
                 "rule1": LeafNode(
                     rule={
                         "rule_def_name": "is_adult",
-                        "min_age": 21,
+                        "params": {
+                            "min_age": 21,
+                        },
                     },
                 ),
             },
@@ -88,7 +90,7 @@ class TestParameterMapping:
         leaf = manifest.rules["rule1"].root
         assert isinstance(leaf, LeafNode)
         assert leaf.rule.rule_def_name == "is_adult"
-        assert leaf.rule.min_age == 21
+        assert leaf.rule.params.min_age == 21
 
     def test_bool_parameter_mapped_correctly(self, user_registry: Registry[User]):
         """Verify bool parameters work correctly."""
@@ -101,6 +103,7 @@ class TestParameterMapping:
                 "rule1": LeafNode(
                     rule={
                         "rule_def_name": "is_active",
+                        "params": {},
                     },
                 ),
             },
@@ -120,7 +123,9 @@ class TestParameterMapping:
                 "rule1": LeafNode(
                     rule={
                         "rule_def_name": "is_named",
-                        "name": "Alice",
+                        "params": {
+                            "name": "Alice",
+                        },
                     },
                 ),
             },
@@ -129,7 +134,7 @@ class TestParameterMapping:
         leaf = manifest.rules["rule1"].root
         assert isinstance(leaf, LeafNode)
         assert leaf.rule.rule_def_name == "is_named"
-        assert leaf.rule.name == "Alice"
+        assert leaf.rule.params.name == "Alice"
 
     def test_float_parameter_mapped_correctly(self, order_registry: Registry[OrderCtx]):
         """Verify float parameters map correctly."""
@@ -141,7 +146,9 @@ class TestParameterMapping:
                 "rule1": LeafNode(
                     rule={
                         "rule_def_name": "min_total",
-                        "amount": 99.99,
+                        "params": {
+                            "amount": 99.99,
+                        },
                     },
                 ),
             },
@@ -149,7 +156,7 @@ class TestParameterMapping:
 
         leaf = manifest.rules["rule1"].root
         assert isinstance(leaf, LeafNode)
-        assert leaf.rule.amount == 99.99
+        assert leaf.rule.params.amount == 99.99
 
     def test_default_parameter_values_work(self, user_registry: Registry[User]):
         """Verify parameters with defaults work when omitted."""
@@ -170,7 +177,7 @@ class TestParameterMapping:
 
         leaf = manifest.rules["rule1"].root
         assert isinstance(leaf, LeafNode)
-        assert leaf.rule.min_age == 18  # default value
+        assert leaf.rule.params.min_age == 18  # default value
 
 
 class TestSchemaValidation:
@@ -186,7 +193,7 @@ class TestSchemaValidation:
             "rules": {
                 "adult_check": {
                     "node_type": "leaf",
-                    "rule": {"rule_def_name": "is_adult", "min_age": 21},
+                    "rule": {"rule_def_name": "is_adult", "params": {"min_age": 21}},
                 },
             },
         }
@@ -207,7 +214,9 @@ class TestSchemaValidation:
                     "rule1": LeafNode(
                         rule={
                             "rule_def_name": "is_adult",
-                            "min_age": "twenty-one",  # Wrong type!
+                            "params": {
+                                "min_age": "twenty-one",  # Wrong type!
+                            },
                         },
                     ),
                 },
@@ -246,7 +255,9 @@ class TestSchemaValidation:
                     "rule1": LeafNode(
                         rule={
                             "rule_def_name": "is_active",
-                            "extra_field": "not_allowed",  # Extra field!
+                            "params": {
+                                "extra_field": "not_allowed",  # Extra field!
+                            },
                         },
                     ),
                 },
@@ -265,6 +276,7 @@ class TestSchemaValidation:
                     "rule1": LeafNode(
                         rule={
                             "rule_def_name": "non_existent_rule",
+                            "params": {},
                         },
                     ),
                 },
@@ -284,7 +296,7 @@ class TestDiverseContextTypes:
 
         manifest = manifest_model(
             rules={
-                "rule1": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
+                "rule1": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
             },
         )
         assert manifest.registry == "user_registry"
@@ -296,7 +308,7 @@ class TestDiverseContextTypes:
 
         manifest = manifest_model(
             rules={
-                "rule1": LeafNode(rule={"rule_def_name": "min_total", "amount": 100.0}),
+                "rule1": LeafNode(rule={"rule_def_name": "min_total", "params": {"amount": 100.0}}),
             },
         )
         assert manifest.registry == "order_registry"
@@ -308,7 +320,7 @@ class TestDiverseContextTypes:
 
         manifest = manifest_model(
             rules={
-                "rule1": LeafNode(rule={"rule_def_name": "min_price", "price": 50.0}),
+                "rule1": LeafNode(rule={"rule_def_name": "min_price", "params": {"price": 50.0}}),
             },
         )
         assert manifest.registry == "product_registry"
@@ -340,3 +352,20 @@ class TestJSONSchemaExport:
         # Should have definitions for rule configs
         schema_str = str(json_schema)
         assert "is_adult" in schema_str.lower() or "IsAdultConfig" in schema_str
+
+
+class TestDiscriminatorNamespace:
+    """Regression: discriminator field must not share a namespace with rule parameters."""
+
+    def test_parameter_named_rule_def_name_does_not_collide(self):
+        """A rule whose signature has a parameter named `rule_def_name` must register successfully."""
+        registry = Registry[User]("shadow_registry")
+
+        @registry.rule_def()
+        def shadowing(user: User, rule_def_name: str) -> bool:
+            return user.name == rule_def_name
+
+        # Must not raise: the discriminator and the `rule_def_name` parameter
+        # are currently passed as sibling kwargs to `create_model`, triggering
+        # `TypeError: got multiple values for keyword argument`.
+        SchemaGenerator(registry).generate()

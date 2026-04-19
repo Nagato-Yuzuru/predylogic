@@ -234,7 +234,8 @@ json_data = """
         {
           "node_type":"leaf",
           "rule":{
-            "rule_def_name":"is_safe"
+            "rule_def_name":"is_safe",
+            "params":{}
           }
         },
         {
@@ -244,17 +245,21 @@ json_data = """
               "node_type":"leaf",
               "rule":{
                 "rule_def_name":"is_high_value",
-                "threshold":2000
+                "params":{
+                  "threshold":2000
+                }
               }
             },
             {
               "node_type":"leaf",
               "rule":{
                 "rule_def_name":"check_region",
-                "regions":[
-                  "US",
-                  "EU"
-                ]
+                "params":{
+                  "regions":[
+                    "US",
+                    "EU"
+                  ]
+                }
               }
             }
           ]

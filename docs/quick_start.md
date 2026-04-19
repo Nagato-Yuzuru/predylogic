@@ -136,247 +136,272 @@ The generated schema can be used to:
 ??? Example output
 	```json
 	{
-	  "$defs":{
-		"AndNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__":{
-		  "additionalProperties":false,
-		  "properties":{
-			"node_type":{
-			  "const":"and",
-			  "default":"and",
-			  "description":"And node in the predicate tree",
-			  "title":"Node Type",
-			  "type":"string"
-			},
-			"rules":{
-			  "description":"All rules must pass",
-			  "items":{
-				"$ref":"#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			  },
-			  "minItems":2,
-			  "title":"Rules",
-			  "type":"array"
-			}
-		  },
-		  "required":[
-			"rules"
-		  ],
-		  "title":"AndNode",
-		  "type":"object"
-		},
-		"IsAdultConfig":{
-		  "additionalProperties":false,
-		  "description":"Check if user is at least min_age years old.",
-		  "properties":{
-			"rule_def_name":{
-			  "const":"is_adult",
-			  "default":"is_adult",
-			  "description":"Name of the rule definition in the registry",
-			  "title":"Rule Def Name",
-			  "type":"string"
-			},
-			"min_age":{
-			  "default":18,
-			  "title":"Min Age",
-			  "type":"integer"
-			}
-		  },
-		  "title":"IsAdultConfig",
-		  "type":"object",
-		  "x-params-order":[
-			"min_age"
-		  ]
-		},
-		"IsEmailVerifiedConfig":{
-		  "additionalProperties":false,
-		  "description":"Check if user email is from a specific domain.",
-		  "properties":{
-			"rule_def_name":{
-			  "const":"is_email_verified",
-			  "default":"is_email_verified",
-			  "description":"Name of the rule definition in the registry",
-			  "title":"Rule Def Name",
-			  "type":"string"
-			},
-			"domain":{
-			  "default":"example.com",
-			  "title":"Domain",
-			  "type":"string"
-			}
-		  },
-		  "title":"IsEmailVerifiedConfig",
-		  "type":"object",
-		  "x-params-order":[
-			"domain"
-		  ]
-		},
-		"IsPremiumConfig":{
-		  "additionalProperties":false,
-		  "description":"Check if user has premium status.",
-		  "properties":{
-			"rule_def_name":{
-			  "const":"is_premium",
-			  "default":"is_premium",
-			  "description":"Name of the rule definition in the registry",
-			  "title":"Rule Def Name",
-			  "type":"string"
-			}
-		  },
-		  "title":"IsPremiumConfig",
-		  "type":"object",
-		  "x-params-order":[ ]
-		},
-		"LeafNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__":{
-		  "additionalProperties":false,
-		  "properties":{
-			"node_type":{
-			  "const":"leaf",
-			  "default":"leaf",
-			  "description":"Leaf node in the predicate tree",
-			  "title":"Node Type",
-			  "type":"string"
-			},
-			"rule":{
-			  "anyOf":[
-				{
-				  "$ref":"#/$defs/IsAdultConfig"
-				},
-				{
-				  "$ref":"#/$defs/IsPremiumConfig"
-				},
-				{
-				  "$ref":"#/$defs/IsEmailVerifiedConfig"
-				}
-			  ],
-			  "description":"The rule to evaluate",
-			  "title":"Rule"
-			}
-		  },
-		  "required":[
-			"rule"
-		  ],
-		  "title":"LeafNode",
-		  "type":"object"
-		},
-		"LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__":{
-		  "discriminator":{
-			"mapping":{
-			  "and":"#/$defs/AndNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
-			  "leaf":"#/$defs/LeafNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
-			  "not":"#/$defs/NotNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
-			  "or":"#/$defs/OrNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
-			  "ref":"#/$defs/RefNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			},
-			"propertyName":"node_type"
-		  },
-		  "oneOf":[
-			{
-			  "$ref":"#/$defs/LeafNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			},
-			{
-			  "$ref":"#/$defs/AndNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			},
-			{
-			  "$ref":"#/$defs/OrNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			},
-			{
-			  "$ref":"#/$defs/NotNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			},
-			{
-			  "$ref":"#/$defs/RefNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			}
-		  ],
-		  "title":"LogicNode"
-		},
-		"NotNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__":{
-		  "additionalProperties":false,
-		  "properties":{
-			"node_type":{
-			  "const":"not",
-			  "default":"not",
-			  "description":"Not node in the predicate tree",
-			  "title":"Node Type",
-			  "type":"string"
-			},
-			"rule":{
-			  "$ref":"#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
-			  "description":"The rule must fail"
-			}
-		  },
-		  "required":[
-			"rule"
-		  ],
-		  "title":"NotNode",
-		  "type":"object"
-		},
-		"OrNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__":{
-		  "additionalProperties":false,
-		  "properties":{
-			"node_type":{
-			  "const":"or",
-			  "default":"or",
-			  "description":"Or node in the predicate tree",
-			  "title":"Node Type",
-			  "type":"string"
-			},
-			"rules":{
-			  "description":"Any rule must pass",
-			  "items":{
-				"$ref":"#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-			  },
-			  "minItems":2,
-			  "title":"Rules",
-			  "type":"array"
-			}
-		  },
-		  "required":[
-			"rules"
-		  ],
-		  "title":"OrNode",
-		  "type":"object"
-		},
-		"RefNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__":{
-		  "additionalProperties":false,
-		  "properties":{
-			"node_type":{
-			  "const":"ref",
-			  "default":"ref",
-			  "description":"Reference to a rule definition",
-			  "title":"Node Type",
-			  "type":"string"
-			},
-			"ref_id":{
-			  "description":"Rule definition ID",
-			  "title":"Ref Id",
-			  "type":"string"
-			}
-		  },
-		  "required":[
-			"ref_id"
-		  ],
-		  "title":"RefNode[Union[IsAdultConfig, IsPremiumConfig, IsEmailVerifiedConfig]]",
-		  "type":"object"
-		}
+	  "$defs": {
+	    "AndNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__": {
+	      "additionalProperties": false,
+	      "properties": {
+	        "node_type": {
+	          "const": "and",
+	          "default": "and",
+	          "description": "And node in the predicate tree",
+	          "title": "Node Type",
+	          "type": "string"
+	        },
+	        "rules": {
+	          "description": "All rules must pass",
+	          "items": {
+	            "$ref": "#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	          },
+	          "minItems": 2,
+	          "title": "Rules",
+	          "type": "array"
+	        }
+	      },
+	      "required": [
+	        "rules"
+	      ],
+	      "title": "AndNode",
+	      "type": "object"
+	    },
+	    "IsAdultConfig": {
+	      "additionalProperties": false,
+	      "description": "Check if user is at least min_age years old.",
+	      "properties": {
+	        "rule_def_name": {
+	          "const": "is_adult",
+	          "default": "is_adult",
+	          "description": "Name of the rule definition in the registry",
+	          "title": "Rule Def Name",
+	          "type": "string"
+	        },
+	        "params": {
+	          "$ref": "#/$defs/IsAdultParams",
+	          "description": "Parameters for the rule"
+	        }
+	      },
+	      "title": "IsAdultConfig",
+	      "type": "object"
+	    },
+	    "IsAdultParams": {
+	      "additionalProperties": false,
+	      "properties": {
+	        "min_age": {
+	          "default": 18,
+	          "title": "Min Age",
+	          "type": "integer"
+	        }
+	      },
+	      "title": "IsAdultParams",
+	      "type": "object"
+	    },
+	    "IsEmailVerifiedConfig": {
+	      "additionalProperties": false,
+	      "description": "Check if user email is from a specific domain.",
+	      "properties": {
+	        "rule_def_name": {
+	          "const": "is_email_verified",
+	          "default": "is_email_verified",
+	          "description": "Name of the rule definition in the registry",
+	          "title": "Rule Def Name",
+	          "type": "string"
+	        },
+	        "params": {
+	          "$ref": "#/$defs/IsEmailVerifiedParams",
+	          "description": "Parameters for the rule"
+	        }
+	      },
+	      "title": "IsEmailVerifiedConfig",
+	      "type": "object"
+	    },
+	    "IsEmailVerifiedParams": {
+	      "additionalProperties": false,
+	      "properties": {
+	        "domain": {
+	          "default": "example.com",
+	          "title": "Domain",
+	          "type": "string"
+	        }
+	      },
+	      "title": "IsEmailVerifiedParams",
+	      "type": "object"
+	    },
+	    "IsPremiumConfig": {
+	      "additionalProperties": false,
+	      "description": "Check if user has premium status.",
+	      "properties": {
+	        "rule_def_name": {
+	          "const": "is_premium",
+	          "default": "is_premium",
+	          "description": "Name of the rule definition in the registry",
+	          "title": "Rule Def Name",
+	          "type": "string"
+	        },
+	        "params": {
+	          "$ref": "#/$defs/IsPremiumParams",
+	          "description": "Parameters for the rule"
+	        }
+	      },
+	      "title": "IsPremiumConfig",
+	      "type": "object"
+	    },
+	    "IsPremiumParams": {
+	      "additionalProperties": false,
+	      "properties": {},
+	      "title": "IsPremiumParams",
+	      "type": "object"
+	    },
+	    "LeafNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__": {
+	      "additionalProperties": false,
+	      "properties": {
+	        "node_type": {
+	          "const": "leaf",
+	          "default": "leaf",
+	          "description": "Leaf node in the predicate tree",
+	          "title": "Node Type",
+	          "type": "string"
+	        },
+	        "rule": {
+	          "anyOf": [
+	            {
+	              "$ref": "#/$defs/IsAdultConfig"
+	            },
+	            {
+	              "$ref": "#/$defs/IsPremiumConfig"
+	            },
+	            {
+	              "$ref": "#/$defs/IsEmailVerifiedConfig"
+	            }
+	          ],
+	          "description": "The rule to evaluate",
+	          "title": "Rule"
+	        }
+	      },
+	      "required": [
+	        "rule"
+	      ],
+	      "title": "LeafNode",
+	      "type": "object"
+	    },
+	    "LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__": {
+	      "discriminator": {
+	        "mapping": {
+	          "and": "#/$defs/AndNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
+	          "leaf": "#/$defs/LeafNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
+	          "not": "#/$defs/NotNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
+	          "or": "#/$defs/OrNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
+	          "ref": "#/$defs/RefNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	        },
+	        "propertyName": "node_type"
+	      },
+	      "oneOf": [
+	        {
+	          "$ref": "#/$defs/LeafNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	        },
+	        {
+	          "$ref": "#/$defs/AndNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	        },
+	        {
+	          "$ref": "#/$defs/OrNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	        },
+	        {
+	          "$ref": "#/$defs/NotNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	        },
+	        {
+	          "$ref": "#/$defs/RefNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	        }
+	      ],
+	      "title": "LogicNode"
+	    },
+	    "NotNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__": {
+	      "additionalProperties": false,
+	      "properties": {
+	        "node_type": {
+	          "const": "not",
+	          "default": "not",
+	          "description": "Not node in the predicate tree",
+	          "title": "Node Type",
+	          "type": "string"
+	        },
+	        "rule": {
+	          "$ref": "#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__",
+	          "description": "The rule must fail"
+	        }
+	      },
+	      "required": [
+	        "rule"
+	      ],
+	      "title": "NotNode",
+	      "type": "object"
+	    },
+	    "OrNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__": {
+	      "additionalProperties": false,
+	      "properties": {
+	        "node_type": {
+	          "const": "or",
+	          "default": "or",
+	          "description": "Or node in the predicate tree",
+	          "title": "Node Type",
+	          "type": "string"
+	        },
+	        "rules": {
+	          "description": "Any rule must pass",
+	          "items": {
+	            "$ref": "#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	          },
+	          "minItems": 2,
+	          "title": "Rules",
+	          "type": "array"
+	        }
+	      },
+	      "required": [
+	        "rules"
+	      ],
+	      "title": "OrNode",
+	      "type": "object"
+	    },
+	    "RefNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__": {
+	      "additionalProperties": false,
+	      "properties": {
+	        "node_type": {
+	          "const": "ref",
+	          "default": "ref",
+	          "description": "Reference to a rule definition",
+	          "title": "Node Type",
+	          "type": "string"
+	        },
+	        "ref_id": {
+	          "description": "Rule definition ID",
+	          "title": "Ref Id",
+	          "type": "string"
+	        }
+	      },
+	      "required": [
+	        "ref_id"
+	      ],
+	      "title": "RefNode[Union[IsAdultConfig, IsPremiumConfig, IsEmailVerifiedConfig]]",
+	      "type": "object"
+	    }
 	  },
-	  "additionalProperties":false,
-	  "properties":{
-		"registry":{
-		  "const":"user_registry",
-		  "default":"user_registry",
-		  "description":"Name of the registry containing the rule definitions",
-		  "title":"Registry",
-		  "type":"string"
-		},
-		"rules":{
-		  "additionalProperties":{
-			"$ref":"#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
-		  },
-		  "description":"Dag of rule definitions.",
-		  "title":"Rules",
-		  "type":"object"
-		}
+	  "additionalProperties": false,
+	  "properties": {
+	    "registry": {
+	      "const": "user_registry",
+	      "default": "user_registry",
+	      "description": "Name of the registry containing the rule definitions",
+	      "title": "Registry",
+	      "type": "string"
+	    },
+	    "rules": {
+	      "additionalProperties": {
+	        "$ref": "#/$defs/LogicNode_Union_IsAdultConfig__IsPremiumConfig__IsEmailVerifiedConfig__"
+	      },
+	      "description": "Dag of rule definitions.",
+	      "title": "Rules",
+	      "type": "object"
+	    }
 	  },
-	  "title":"UserRegistryManifest",
-	  "type":"object"
+	  "title": "UserRegistryManifest",
+	  "type": "object"
 	}
 	```
 
@@ -396,12 +421,15 @@ manifest = UserManifest(
         "is_adult_rule": LeafNode(
             rule={
                 "rule_def_name": "is_adult",
-                "min_age": 21,
+                "params": {
+                    "min_age": 21,
+                },
             }
         ),
         "is_premium_rule": LeafNode(
             rule={
                 "rule_def_name": "is_premium",
+                "params": {},
             }
         ),
     }
@@ -421,14 +449,16 @@ manifest = UserManifest(
     rules={
         "premium_adult": AndNode(
             rules=[
-                LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                LeafNode(rule={"rule_def_name": "is_premium"}),
+                LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                LeafNode(rule={"rule_def_name": "is_premium", "params": {}}),
             ]
         ),
         "verified_email": LeafNode(
             rule={
                 "rule_def_name": "is_email_verified",
-                "domain": "company.com",
+                "params": {
+                    "domain": "company.com",
+                },
             }
         ),
         "special_users": OrNode(
@@ -451,11 +481,11 @@ config_data = {
     "rules": {
         "adult_check": {
             "node_type": "leaf",
-            "rule": {"rule_def_name": "is_adult", "min_age": 21}
+            "rule": {"rule_def_name": "is_adult", "params": {"min_age": 21}}
         },
         "premium_check": {
             "node_type": "leaf",
-            "rule": {"rule_def_name": "is_premium"}
+            "rule": {"rule_def_name": "is_premium", "params": {}}
         },
         "premium_adults": {
             "node_type": "and",
@@ -515,7 +545,7 @@ Update rules at runtime without recreating handles:
 new_manifest = UserManifest(
     rules={
         "adult_check": LeafNode(
-            rule={"rule_def_name": "is_adult", "min_age": 25}
+            rule={"rule_def_name": "is_adult", "params": {"min_age": 25}}
         ),
     }
 )
@@ -535,7 +565,7 @@ order_schema = SchemaGenerator(order_registry).generate()
 order_manifest = order_schema(
     rules={
         "high_value": LeafNode(
-            rule={"rule_def_name": "high_value_order", "min_total": 5000.0}
+            rule={"rule_def_name": "high_value_order", "params": {"min_total": 5000.0}}
         ),
     }
 )
@@ -687,12 +717,12 @@ UserManifest = schema_gen.generate()
 # 4. Create configuration
 manifest = UserManifest(
     rules={
-        "adult": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 21}),
-        "premium": LeafNode(rule={"rule_def_name": "is_premium"}),
+        "adult": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 21}}),
+        "premium": LeafNode(rule={"rule_def_name": "is_premium", "params": {}}),
         "vip_users": AndNode(
             rules=[
-                LeafNode(rule={"rule_def_name": "is_adult", "min_age": 21}),
-                LeafNode(rule={"rule_def_name": "is_premium"}),
+                LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 21}}),
+                LeafNode(rule={"rule_def_name": "is_premium", "params": {}}),
             ]
         ),
     }

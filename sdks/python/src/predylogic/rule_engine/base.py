@@ -3,13 +3,14 @@ from __future__ import annotations
 import sys
 from abc import ABC
 from graphlib import CycleError, TopologicalSorter
-from typing import TYPE_CHECKING, Annotated, Generic, Literal, TypeVar, final
+from typing import TYPE_CHECKING, Annotated, ClassVar, Generic, Literal, TypeVar, final
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
 
 from predylogic.rule_engine.errs import RuleDefRingError
 
 if TYPE_CHECKING:
+    import inspect
     from collections.abc import Generator
 
 if sys.version_info >= (3, 11):
@@ -17,7 +18,23 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_never
 
-X_PARAMS_ORDER = "x-params-order"
+
+class BaseRuleParams(BaseModel, ABC):
+    """
+    Base class for per-rule parameter models.
+
+    Each rule's parameters are nested under `BaseRuleConfig.params` inside a
+    dedicated subclass of this model, keeping the user-defined parameter
+    namespace separate from the discriminator (`rule_def_name`).
+
+    `__param_kinds__` records each parameter's original `inspect.Parameter.kind`
+    so the rule engine can restore `*args` / `**kwargs` semantics at call time;
+    `SchemaGenerator._create_rule_model` populates it on each subclass.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", frozen=True)
+
+    __param_kinds__: ClassVar[dict[str, inspect._ParameterKind]] = {}
 
 
 class BaseRuleConfig(BaseModel, ABC):
@@ -28,6 +45,7 @@ class BaseRuleConfig(BaseModel, ABC):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", frozen=True)
 
     rule_def_name: str
+    params: BaseRuleParams
 
 
 if TYPE_CHECKING:

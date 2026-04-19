@@ -40,7 +40,7 @@ class TestHotReload:
         # Initial manifest: is_active rule
         manifest_v1 = manifest_model(
             rules={
-                "active_check": LeafNode(rule={"rule_def_name": "is_active"}),
+                "active_check": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
@@ -53,7 +53,7 @@ class TestHotReload:
         # Update manifest: change to is_adult with high min_age (will return False for our user)
         manifest_v2 = manifest_model(
             rules={
-                "active_check": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 100}),
+                "active_check": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 100}}),
             },
         )
 
@@ -84,8 +84,8 @@ class TestHotReload:
         # Initial manifest with two rules
         manifest_v1 = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                "rule_b": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
@@ -100,8 +100,8 @@ class TestHotReload:
         # Update only rule_a, leave rule_b unchanged
         manifest_v2 = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 100}),
-                "rule_b": LeafNode(rule={"rule_def_name": "is_active"}),  # Unchanged
+                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 100}}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),  # Unchanged
             },
         )
 
@@ -133,7 +133,7 @@ class TestHotReload:
         # Initial manifest: rule_a refs rule_b
         manifest_v1 = manifest_model(
             rules={
-                "rule_b": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                 "rule_a": RefNode(ref_id="rule_b"),
             },
         )
@@ -148,7 +148,7 @@ class TestHotReload:
         # Update rule_b (the referenced rule)
         manifest_v2 = manifest_model(
             rules={
-                "rule_b": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 100}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 100}}),
                 "rule_a": RefNode(ref_id="rule_b"),  # Still references rule_b
             },
         )
@@ -235,7 +235,7 @@ class TestLazyLinkingTombstone:
         # Step 2: Update manifest to include rule_b
         manifest_v2 = manifest_model(
             rules={
-                "rule_b": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                 "rule_a": RefNode(ref_id="rule_b"),
             },
         )
@@ -281,7 +281,7 @@ class TestLazyLinkingTombstone:
             rules={
                 "rule_a": AndNode(
                     rules=[
-                        LeafNode(rule={"rule_def_name": "is_active"}),
+                        LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                         RefNode(ref_id="missing_rule"),  # Missing!
                     ],
                 ),
@@ -313,7 +313,7 @@ class TestHandleSingleton:
 
         manifest = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_a": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
@@ -341,8 +341,8 @@ class TestHandleSingleton:
 
         manifest = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_active"}),
-                "rule_b": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
+                "rule_a": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
             },
         )
 
@@ -387,13 +387,13 @@ class TestPartialManifestUpdates:
 
         user_manifest = user_schema(
             rules={
-                "user_rule": LeafNode(rule={"rule_def_name": "is_active"}),
+                "user_rule": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
         order_manifest = order_schema(
             rules={
-                "order_rule": LeafNode(rule={"rule_def_name": "is_priority"}),
+                "order_rule": LeafNode(rule={"rule_def_name": "is_priority", "params": {}}),
             },
         )
 
@@ -409,7 +409,7 @@ class TestPartialManifestUpdates:
         # Update only user_registry
         user_manifest_v2 = user_schema(
             rules={
-                "user_rule": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 100}),
+                "user_rule": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 100}}),
             },
         )
 
@@ -436,9 +436,9 @@ class TestPartialManifestUpdates:
         # Initial manifest with 3 rules
         manifest_v1 = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                "rule_b": LeafNode(rule={"rule_def_name": "is_active"}),
-                "rule_c": LeafNode(rule={"rule_def_name": "is_named", "name": "Alice"}),
+                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
+                "rule_c": LeafNode(rule={"rule_def_name": "is_named", "params": {"name": "Alice"}}),
             },
         )
 
@@ -451,9 +451,9 @@ class TestPartialManifestUpdates:
         # Update only rule_b
         manifest_v2 = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),  # Same
-                "rule_b": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 100}),  # Changed
-                "rule_c": LeafNode(rule={"rule_def_name": "is_named", "name": "Alice"}),  # Same
+                "rule_a": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),  # Same
+                "rule_b": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 100}}),  # Changed
+                "rule_c": LeafNode(rule={"rule_def_name": "is_named", "params": {"name": "Alice"}}),  # Same
             },
         )
 
@@ -483,7 +483,7 @@ class TestPartialManifestUpdates:
         # Initial manifest with rule
         manifest_v1 = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_a": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
@@ -533,7 +533,7 @@ class TestEdgeCases:
 
         manifest = manifest_model(
             rules={
-                "rule_a": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_a": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
@@ -557,7 +557,7 @@ class TestEdgeCases:
 
         # Update 1
         manifest_v1 = manifest_model(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active"})},
+            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_active", "params": {}})},
         )
         engine.update_manifests(manifest_v1)
         handle = engine.get_predicate_handle("user_registry", "rule_a")
@@ -565,14 +565,14 @@ class TestEdgeCases:
 
         # Update 2
         manifest_v2 = manifest_model(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 100})},
+            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 100}})},
         )
         engine.update_manifests(manifest_v2)
         assert handle(adult_user) is False
 
         # Update 3
         manifest_v3 = manifest_model(
-            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18})},
+            rules={"rule_a": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}})},
         )
         engine.update_manifests(manifest_v3)
         assert handle(adult_user) is True
