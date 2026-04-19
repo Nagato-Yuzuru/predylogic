@@ -1,0 +1,32 @@
+name: release-published
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  pypi-publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    # Scope to SDK-tagged releases so other SDKs (e.g. TypeScript) won't
+    # accidentally trigger a Python publish when their release is published.
+    if: startsWith(github.event.release.tag_name, 'sdks/python/v')
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-python-env
+
+      - name: Build package
+        run: just py-build
+
+      - name: Publish package
+        run: just py-publish
