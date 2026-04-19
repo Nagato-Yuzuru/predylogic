@@ -340,3 +340,20 @@ class TestJSONSchemaExport:
         # Should have definitions for rule configs
         schema_str = str(json_schema)
         assert "is_adult" in schema_str.lower() or "IsAdultConfig" in schema_str
+
+
+class TestDiscriminatorNamespace:
+    """Regression: discriminator field must not share a namespace with rule parameters."""
+
+    def test_parameter_named_rule_def_name_does_not_collide(self):
+        """A rule whose signature has a parameter named `rule_def_name` must register successfully."""
+        registry = Registry[User]("shadow_registry")
+
+        @registry.rule_def()
+        def shadowing(user: User, rule_def_name: str) -> bool:
+            return user.name == rule_def_name
+
+        # Must not raise: the discriminator and the `rule_def_name` parameter
+        # are currently passed as sibling kwargs to `create_model`, triggering
+        # `TypeError: got multiple values for keyword argument`.
+        SchemaGenerator(registry).generate()
