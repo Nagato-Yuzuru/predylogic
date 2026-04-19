@@ -67,6 +67,8 @@ jobs:
           fail_ci_if_error: true
 
   check-docs:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Check out
