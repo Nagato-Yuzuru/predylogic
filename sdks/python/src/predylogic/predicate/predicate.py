@@ -495,7 +495,8 @@ class Compiler:
                 # N-ary back (Mixed mode)
                 if not children:
                     break
-                chain.extend(children[1:])
+                # reversed so stack LIFO restores left-to-right evaluation order
+                chain.extend(reversed(children[1:]))
                 current = children[0]
 
         chain.append(current)
@@ -568,14 +569,13 @@ class Compiler:
                 match node:
                     case _PredicateLeaf() as p:
                         results.append(self._create_ast_leaf(p, fallback))
-                    case (
-                        _PredicateAnd(node_type=node_type, children=children)
-                        | _PredicateOr(node_type=node_type, children=children)
-                    ):
-                        flat_tuple = ("FLATTENED", node_type, len(children))
+                    case _PredicateAnd(node_type=node_type, children=_) | _PredicateOr(node_type=node_type, children=_):
                         # NOTE: _collect_chain collects right-siblings, resulting in reverse execution order.
                         #  Stack extension restores the Left-to-Right order for AST generation.
-                        chain = self._collect_chain(node, node_type)
+                        #  Walking through same-type descendants can return MORE elements than the
+                        #  top-level node's children — the flatten count must reflect the walked length.
+                        chain = list(self._collect_chain(node, node_type))
+                        flat_tuple = ("FLATTENED", node_type, len(chain))
                         stack.append(self.CompileStack(flat_tuple, visited=False, fallback=fallback))
 
                         child_fallback = node_type != "or"
@@ -637,37 +637,46 @@ class Compiler:
         if self.short_circuit:
 
             def _rt_and(first: Trace[T_contra], *thunks: Callable[[], Trace[T_contra]]) -> Trace[T_contra]:
-                res = first
+                children: list[Trace[T_contra]] = [first]
+                if not first.success:
+                    return Trace(success=False, operator="and", children=tuple(children))
                 for thunk in thunks:
-                    if not res.success:
-                        return Trace(success=False, operator="and", children=(res,))
-                    other = thunk()
-                    res = res & other
-                return res
+                    child = thunk()
+                    children.append(child)
+                    if not child.success:
+                        return Trace(success=False, operator="and", children=tuple(children))
+                return Trace(success=True, operator="and", children=tuple(children))
 
             def _rt_or(first: Trace[T_contra], *thunks: Callable[[], Trace[T_contra]]) -> Trace[T_contra]:
-                res = first
+                children: list[Trace[T_contra]] = [first]
+                if first.success:
+                    return Trace(success=True, operator="or", children=tuple(children))
                 for thunk in thunks:
-                    if res.success:
-                        return Trace(success=True, operator="or", children=(res,))
-
-                    other = thunk()
-                    res = res | other
-                return res
+                    child = thunk()
+                    children.append(child)
+                    if child.success:
+                        return Trace(success=True, operator="or", children=tuple(children))
+                return Trace(success=False, operator="or", children=tuple(children))
 
         else:
 
             def _rt_and(first: Trace[T_contra], *thunks: Callable[[], Trace[T_contra]]) -> Trace[T_contra]:
-                res = first
+                children: list[Trace[T_contra]] = [first]
+                success = first.success
                 for thunk in thunks:
-                    res = res & thunk()
-                return res
+                    child = thunk()
+                    children.append(child)
+                    success = success and child.success
+                return Trace(success=success, operator="and", children=tuple(children))
 
             def _rt_or(first: Trace[T_contra], *thunks: Callable[[], Trace[T_contra]]) -> Trace[T_contra]:
-                res = first
+                children: list[Trace[T_contra]] = [first]
+                success = first.success
                 for thunk in thunks:
-                    res = res | thunk()
-                return res
+                    child = thunk()
+                    children.append(child)
+                    success = success or child.success
+                return Trace(success=success, operator="or", children=tuple(children))
 
         self._context[RT_AND] = _rt_and
         self._context[RT_OR] = _rt_or
