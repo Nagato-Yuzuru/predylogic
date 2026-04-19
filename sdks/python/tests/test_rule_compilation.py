@@ -544,3 +544,33 @@ class TestVariadicParameters:
 
         assert handle({"active": True}) is True
         assert handle({"active": False}) is False
+
+    def test_var_keyword_collision_with_keyword_only_raises(self, registry_manager):
+        """A VAR_KEYWORD dict that shadows a KEYWORD_ONLY param must raise TypeError."""
+        registry = Registry[dict]("varkw_collide_registry")
+
+        @registry.rule_def()
+        def combo(ctx: dict, *, explicit: int, **extra: int) -> bool:
+            return ctx.get("x") == explicit
+
+        registry_manager.add_register(registry)
+        engine = RuleEngine(registry_manager)
+        manifest_model = SchemaGenerator(registry).generate()
+
+        # Both an explicit KEYWORD_ONLY value and a colliding entry inside **extra.
+        manifest = manifest_model(
+            rules={
+                "r1": LeafNode(
+                    rule={
+                        "rule_def_name": "combo",
+                        "params": {"explicit": 5, "extra": {"explicit": 10}},
+                    },
+                ),
+            },
+        )
+
+        # Merging the VAR_KEYWORD dict into `keyword` would silently clobber
+        # `explicit=5`. Spreading them as two `**` unpacks lets Python raise
+        # the same TypeError a direct call would produce.
+        with pytest.raises(TypeError, match="multiple values for keyword argument 'explicit'"):
+            engine.update_manifests(manifest)

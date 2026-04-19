@@ -255,18 +255,23 @@ class RuleEngine:
 
         positional: list[Any] = []
         keyword: dict[str, Any] = {}
+        # Kept separate from `keyword` so Python's native call semantics raise
+        # `TypeError: got multiple values for keyword argument X` when the
+        # VAR_KEYWORD dict collides with a KEYWORD_ONLY (or positional) param —
+        # mirroring what would happen if the user called the function directly.
+        var_kwargs: dict[str, Any] = {}
         for name, kind in param_kinds.items():
             value = param_values[name]
             if kind is inspect.Parameter.VAR_POSITIONAL:
                 positional.extend(value)
             elif kind is inspect.Parameter.VAR_KEYWORD:
-                keyword.update(value)
+                var_kwargs = value
             elif kind is inspect.Parameter.KEYWORD_ONLY:
                 keyword[name] = value
             else:  # POSITIONAL_ONLY or POSITIONAL_OR_KEYWORD
                 positional.append(value)
 
-        return producer(*positional, **keyword)
+        return producer(*positional, **keyword, **var_kwargs)
 
     def _missing_predicate(self, registry_name: str, rule_name: str) -> Predicate:
         def _raise(_) -> bool:  # noqa: ANN001
