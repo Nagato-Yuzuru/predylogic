@@ -11,7 +11,7 @@ Tests cover:
 from __future__ import annotations
 
 import pytest
-from predylogic import SchemaGenerator
+from predylogic import Registry, SchemaGenerator
 from predylogic.register.errs import RegistryNotFoundError
 from predylogic.rule_engine import RuleEngine
 from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode
@@ -486,3 +486,61 @@ class TestDiverseContextTypes:
 
         # expensive_product: price=1200.0, in_stock=True -> True AND True = True
         assert handle(expensive_product) is True
+
+
+class TestVariadicParameters:
+    """Regression: `*args` and `**kwargs` must round-trip correctly through a manifest."""
+
+    def test_var_positional_parameter_is_unpacked_as_positional(self, registry_manager):
+        """A rule with `*items` must receive the manifest list as positional args."""
+        registry = Registry[dict]("varpos_registry")
+
+        @registry.rule_def()
+        def has_items(ctx: dict, *items: int) -> bool:
+            return all(i in ctx.get("xs", []) for i in items)
+
+        registry_manager.add_register(registry)
+        engine = RuleEngine(registry_manager)
+        manifest_model = SchemaGenerator(registry).generate()
+
+        manifest = manifest_model(
+            rules={
+                "r1": LeafNode(rule={"rule_def_name": "has_items", "items": [1, 2, 3]}),
+            },
+        )
+
+        # Before the fix: `producer(**{"items": [1, 2, 3]})` reaches `has_items(ctx, items=[...])`
+        # and raises `TypeError: unexpected keyword argument 'items'` because `*items` is VAR_POSITIONAL.
+        engine.update_manifests(manifest)
+        handle = engine.get_predicate_handle("varpos_registry", "r1")
+
+        assert handle({"xs": [1, 2, 3, 4]}) is True
+        assert handle({"xs": [1, 2]}) is False
+
+    def test_var_keyword_parameter_is_unpacked_as_keyword(self, registry_manager):
+        """A rule with `**flags` must receive the manifest dict as keyword args."""
+        registry = Registry[dict]("varkw_registry")
+
+        @registry.rule_def()
+        def flag_any(ctx: dict, **flags: bool) -> bool:
+            return any(ctx.get(k) == v for k, v in flags.items())
+
+        registry_manager.add_register(registry)
+        engine = RuleEngine(registry_manager)
+        manifest_model = SchemaGenerator(registry).generate()
+
+        manifest = manifest_model(
+            rules={
+                "r1": LeafNode(rule={"rule_def_name": "flag_any", "flags": {"active": True}}),
+            },
+        )
+
+        # Before the fix: `producer(**{"flags": {"active": True}})` reaches
+        # `flag_any(ctx, flags={"active": True})`, so `**flags` captures a single
+        # key named "flags" whose value is the dict. The predicate returns False
+        # instead of True — silent semantic corruption.
+        engine.update_manifests(manifest)
+        handle = engine.get_predicate_handle("varkw_registry", "r1")
+
+        assert handle({"active": True}) is True
+        assert handle({"active": False}) is False
