@@ -42,8 +42,9 @@ class DefaultTraceStyle(TraceStyle):
         """
         indent = "  " * level
 
-        if trace.node and trace.node.desc:
-            label = trace.node.desc
+        node_label = (trace.node.desc or trace.node.name) if trace.node else None
+        if node_label:
+            label = node_label
             if trace.operator in ("and", "or", "not"):
                 label = f"{label} <{trace.operator.upper()}>"
         else:
