@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import sys
 from threading import RLock
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
@@ -245,8 +246,27 @@ class RuleEngine:
         if producer is None:
             raise RuleDefNotFoundError(rule_def_name)
 
-        params = rule_config.model_dump(by_alias=True, exclude={"rule_def_name"})
-        return producer(**params)
+        params_model = rule_config.params
+        param_values = params_model.model_dump(by_alias=True)
+        # `__param_kinds__` is attached by `SchemaGenerator._create_rule_model` —
+        # it maps each flattened field back to its original signature kind so we
+        # can restore `*args` / `**kwargs` at call time.
+        param_kinds: dict[str, inspect._ParameterKind] = type(params_model).__param_kinds__
+
+        positional: list[Any] = []
+        keyword: dict[str, Any] = {}
+        for name, kind in param_kinds.items():
+            value = param_values[name]
+            if kind is inspect.Parameter.VAR_POSITIONAL:
+                positional.extend(value)
+            elif kind is inspect.Parameter.VAR_KEYWORD:
+                keyword.update(value)
+            elif kind is inspect.Parameter.KEYWORD_ONLY:
+                keyword[name] = value
+            else:  # POSITIONAL_ONLY or POSITIONAL_OR_KEYWORD
+                positional.append(value)
+
+        return producer(*positional, **keyword)
 
     def _missing_predicate(self, registry_name: str, rule_name: str) -> Predicate:
         def _raise(_) -> bool:  # noqa: ANN001

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, TypeVar
 from caseconverter import pascalcase
 from pydantic import ConfigDict, Field, RootModel, create_model
 
-from predylogic.rule_engine.base import X_PARAMS_ORDER, BaseRuleConfig, RuleSetManifest
+from predylogic.rule_engine.base import BaseRuleConfig, BaseRuleParams, RuleSetManifest
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -95,26 +95,44 @@ class SchemaGenerator(Generic[T_cap]):
     def _create_rule_model(self, rule_name: str, producer: PredicateProducer[T_cap, ...]) -> type[BaseRuleConfig]:
         sig = inspect.signature(producer)
         doc = inspect.getdoc(producer) or f"Configuration for {rule_name}"
-        field_order = list(sig.parameters.keys())
 
         signatures = SignatureConv(sig).conv_to_pydantic_field()
+        param_kinds = {name: param.kind for name, param in sig.parameters.items()}
 
-        model = create_model(
-            to_pascal(f"{rule_name}Config"),
+        params_name = to_pascal(f"{rule_name}Params")
+        params_model = create_model(
+            params_name,
+            __base__=BaseRuleParams,
+            **signatures,
+        )  # ty:ignore[no-matching-overload]
+        params_model.__name__ = params_name
+        # Attached so `RuleEngine._predicate_from_rule_config` can re-expand
+        # VAR_POSITIONAL / VAR_KEYWORD fields into `*args` / `**kwargs` at
+        # call time — Pydantic flattens both into named fields.
+        params_model.__param_kinds__ = param_kinds
+
+        # Only default `params` to an empty model when there is nothing required
+        # to supply. Otherwise `default_factory=params_model` would run on missing
+        # input and surface the inner "field required" error, masking the real
+        # "params is missing" signal at the config level.
+        if any(f.is_required() for f in params_model.model_fields.values()):
+            params_field = Field(description="Parameters for the rule")
+        else:
+            params_field = Field(default_factory=params_model, description="Parameters for the rule")
+
+        config_name = to_pascal(f"{rule_name}Config")
+        config_model = create_model(
+            config_name,
             __base__=BaseRuleConfig,
             __doc__=doc,
-            __config__=ConfigDict(
-                json_schema_extra={X_PARAMS_ORDER: field_order},
-            ),
             rule_def_name=(
                 Literal[rule_name],  # ty:ignore[invalid-type-form]
                 Field(rule_name, description="Name of the rule definition in the registry", init=False),
             ),
-            **signatures,
-        )  # ty:ignore[no-matching-overload]
-
-        model.__name__ = f"{to_pascal(rule_name)}Config"
-        return model
+            params=(params_model, params_field),
+        )
+        config_model.__name__ = config_name
+        return config_model
 
 
 class SignatureConv:

@@ -38,7 +38,7 @@ class TestBasicLeafCompilation:
 
         manifest = manifest_model(
             rules={
-                "adult_check": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
+                "adult_check": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
             },
         )
 
@@ -63,7 +63,7 @@ class TestBasicLeafCompilation:
         # is_adult has min_age with default=18
         manifest = manifest_model(
             rules={
-                "adult_check": LeafNode(rule={"rule_def_name": "is_adult"}),  # Uses default min_age=18
+                "adult_check": LeafNode(rule={"rule_def_name": "is_adult", "params": {}}),  # Uses default min_age=18
             },
         )
 
@@ -85,7 +85,7 @@ class TestBasicLeafCompilation:
 
         manifest = manifest_model(
             rules={
-                "active_check": LeafNode(rule={"rule_def_name": "is_active"}),
+                "active_check": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
@@ -102,9 +102,9 @@ class TestBasicLeafCompilation:
 
         manifest = manifest_model(
             rules={
-                "adult_check": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                "active_check": LeafNode(rule={"rule_def_name": "is_active"}),
-                "name_check": LeafNode(rule={"rule_def_name": "is_named", "name": "Alice"}),
+                "adult_check": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                "active_check": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
+                "name_check": LeafNode(rule={"rule_def_name": "is_named", "params": {"name": "Alice"}}),
             },
         )
 
@@ -138,8 +138,8 @@ class TestLogicComposition:
             rules={
                 "adult_and_active": AndNode(
                     rules=[
-                        LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                        LeafNode(rule={"rule_def_name": "is_active"}),
+                        LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                        LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                     ],
                 ),
             },
@@ -169,8 +169,8 @@ class TestLogicComposition:
             rules={
                 "adult_or_active": OrNode(
                     rules=[
-                        LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                        LeafNode(rule={"rule_def_name": "is_active"}),
+                        LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                        LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                     ],
                 ),
             },
@@ -193,7 +193,7 @@ class TestLogicComposition:
         manifest = manifest_model(
             rules={
                 "not_active": NotNode(
-                    rule=LeafNode(rule={"rule_def_name": "is_active"}),
+                    rule=LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                 ),
             },
         )
@@ -222,11 +222,11 @@ class TestLogicComposition:
                     rules=[
                         AndNode(
                             rules=[
-                                LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                                LeafNode(rule={"rule_def_name": "is_active"}),
+                                LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                                LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                             ],
                         ),
-                        LeafNode(rule={"rule_def_name": "is_named", "name": "Alice"}),
+                        LeafNode(rule={"rule_def_name": "is_named", "params": {"name": "Alice"}}),
                     ],
                 ),
             },
@@ -250,8 +250,8 @@ class TestLogicComposition:
                 "not_adult_or_active": NotNode(
                     rule=OrNode(
                         rules=[
-                            LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                            LeafNode(rule={"rule_def_name": "is_active"}),
+                            LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                            LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                         ],
                     ),
                 ),
@@ -282,7 +282,7 @@ class TestStaticRefNode:
         # Rule A references Rule B, both defined in manifest
         manifest = manifest_model(
             rules={
-                "rule_b": LeafNode(rule={"rule_def_name": "is_active"}),
+                "rule_b": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                 "rule_a": RefNode(ref_id="rule_b"),
             },
         )
@@ -307,8 +307,8 @@ class TestStaticRefNode:
         # rule_c = rule_a AND rule_b (both are refs)
         manifest = manifest_model(
             rules={
-                "adult_leaf": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                "active_leaf": LeafNode(rule={"rule_def_name": "is_active"}),
+                "adult_leaf": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                "active_leaf": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                 "rule_a": RefNode(ref_id="adult_leaf"),
                 "rule_b": RefNode(ref_id="active_leaf"),
                 "rule_c": AndNode(rules=[RefNode(ref_id="rule_a"), RefNode(ref_id="rule_b")]),
@@ -329,7 +329,7 @@ class TestStaticRefNode:
 
         manifest = manifest_model(
             rules={
-                "leaf": LeafNode(rule={"rule_def_name": "is_active"}),
+                "leaf": LeafNode(rule={"rule_def_name": "is_active", "params": {}}),
                 "ref_c": RefNode(ref_id="leaf"),
                 "ref_b": RefNode(ref_id="ref_c"),
                 "ref_a": RefNode(ref_id="ref_b"),
@@ -355,7 +355,7 @@ class TestErrorCases:
         # Create manifest but manually change registry name
         manifest = manifest_model(
             rules={
-                "rule1": LeafNode(rule={"rule_def_name": "is_adult", "min_age": 18}),
+                "rule1": LeafNode(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
             },
         )
 
@@ -384,6 +384,7 @@ class TestErrorCases:
                     "bad_rule": LeafNode(
                         rule={
                             "rule_def_name": "non_existent_rule_def",
+                            "params": {},
                         },
                     ),
                 },
@@ -446,8 +447,8 @@ class TestDiverseContextTypes:
             rules={
                 "expensive_priority": AndNode(
                     rules=[
-                        LeafNode(rule={"rule_def_name": "min_total", "amount": 100.0}),
-                        LeafNode(rule={"rule_def_name": "is_priority"}),
+                        LeafNode(rule={"rule_def_name": "min_total", "params": {"amount": 100.0}}),
+                        LeafNode(rule={"rule_def_name": "is_priority", "params": {}}),
                     ],
                 ),
             },
@@ -474,8 +475,8 @@ class TestDiverseContextTypes:
             rules={
                 "premium_in_stock": AndNode(
                     rules=[
-                        LeafNode(rule={"rule_def_name": "min_price", "price": 1000.0}),
-                        LeafNode(rule={"rule_def_name": "in_stock"}),
+                        LeafNode(rule={"rule_def_name": "min_price", "params": {"price": 1000.0}}),
+                        LeafNode(rule={"rule_def_name": "in_stock", "params": {}}),
                     ],
                 ),
             },
@@ -505,12 +506,12 @@ class TestVariadicParameters:
 
         manifest = manifest_model(
             rules={
-                "r1": LeafNode(rule={"rule_def_name": "has_items", "items": [1, 2, 3]}),
+                "r1": LeafNode(rule={"rule_def_name": "has_items", "params": {"items": [1, 2, 3]}}),
             },
         )
 
-        # Before the fix: `producer(**{"items": [1, 2, 3]})` reaches `has_items(ctx, items=[...])`
-        # and raises `TypeError: unexpected keyword argument 'items'` because `*items` is VAR_POSITIONAL.
+        # Pre-fix, this reached `has_items(ctx, items=[...])` and raised
+        # `TypeError: unexpected keyword argument 'items'` because `*items` is VAR_POSITIONAL.
         engine.update_manifests(manifest)
         handle = engine.get_predicate_handle("varpos_registry", "r1")
 
@@ -531,14 +532,13 @@ class TestVariadicParameters:
 
         manifest = manifest_model(
             rules={
-                "r1": LeafNode(rule={"rule_def_name": "flag_any", "flags": {"active": True}}),
+                "r1": LeafNode(rule={"rule_def_name": "flag_any", "params": {"flags": {"active": True}}}),
             },
         )
 
-        # Before the fix: `producer(**{"flags": {"active": True}})` reaches
-        # `flag_any(ctx, flags={"active": True})`, so `**flags` captures a single
-        # key named "flags" whose value is the dict. The predicate returns False
-        # instead of True — silent semantic corruption.
+        # Pre-fix, this reached `flag_any(ctx, flags={"active": True})`, so
+        # `**flags` captured a single key named "flags" whose value was the dict.
+        # The predicate returned False instead of True — silent semantic corruption.
         engine.update_manifests(manifest)
         handle = engine.get_predicate_handle("varkw_registry", "r1")
 

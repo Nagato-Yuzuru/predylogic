@@ -42,7 +42,7 @@ class TestConcurrentHandleCreation:
         leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])
         manifest = mock_type.build(
             rules={
-                "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"}),
+                "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}}),
             },
         )
 
@@ -78,9 +78,9 @@ class TestConcurrentHandleCreation:
         leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])
         manifest = mock_type.build(
             rules={
-                "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"}),
-                "rule_b": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18}),
-                "rule_c": leaf_factory.build(rule={"rule_def_name": "is_named", "name": "Alice"}),
+                "rule_a": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}}),
+                "rule_b": leaf_factory.build(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}}),
+                "rule_c": leaf_factory.build(rule={"rule_def_name": "is_named", "params": {"name": "Alice"}}),
             },
         )
 
@@ -156,7 +156,7 @@ class TestConcurrentManifestUpdates:
         mock_type = model_mock(manifest_model)
         leaf_factory = model_mock(LeafNode[Any])
         manifest_initial = mock_type.build(
-            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}})},
         )
         engine.update_manifests(manifest_initial)
         handle = engine.get_predicate_handle("user_registry", "rule_a")
@@ -168,11 +168,11 @@ class TestConcurrentManifestUpdates:
             # Alternate between two different rule configs
             if iteration % 2 == 0:
                 manifest = mock_type.build(
-                    rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
+                    rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}})},
                 )
             else:
                 manifest = mock_type.build(
-                    rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18})},
+                    rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}})},
                 )
             engine.update_manifests(manifest)
 
@@ -205,7 +205,7 @@ class TestConcurrentManifestUpdates:
         mock_type = model_mock(manifest_model)
         leaf_factory = model_mock(LeafNode[Any])
         manifest = mock_type.build(
-            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}})},
         )
         engine.update_manifests(manifest)
 
@@ -222,7 +222,7 @@ class TestConcurrentManifestUpdates:
 
         def writer(iteration: int):
             manifest = mock_type.build(
-                rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18})},
+                rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}})},
             )
             engine.update_manifests(manifest)
 
@@ -260,10 +260,10 @@ class TestConcurrentManifestUpdates:
 
         # Pre-load manifests
         user_manifest = user_mock.build(
-            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}})},
         )
         order_manifest = order_mock.build(
-            rules={"rule_b": leaf_factory.build(rule={"rule_def_name": "is_priority"})},
+            rules={"rule_b": leaf_factory.build(rule={"rule_def_name": "is_priority", "params": {}})},
         )
 
         engine.update_manifests(user_manifest, order_manifest)
@@ -275,13 +275,13 @@ class TestConcurrentManifestUpdates:
 
         def update_user(iteration: int):
             manifest = user_mock.build(
-                rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active"})},
+                rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}})},
             )
             engine.update_manifests(manifest)
 
         def update_order(iteration: int):
             manifest = order_mock.build(
-                rules={"rule_b": leaf_factory.build(rule={"rule_def_name": "is_priority"})},
+                rules={"rule_b": leaf_factory.build(rule={"rule_def_name": "is_priority", "params": {}})},
             )
             engine.update_manifests(manifest)
 
@@ -319,7 +319,7 @@ class TestConcurrentExecution:
         mock_type = model_mock(manifest_model)
         leaf_factory = model_mock(LeafNode[Any])
         manifest = mock_type.build(
-            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "min_age": 18})},
+            rules={"rule_a": leaf_factory.build(rule={"rule_def_name": "is_adult", "params": {"min_age": 18}})},
         )
 
         engine.update_manifests(manifest)
@@ -364,7 +364,9 @@ class TestRaceConditions:
         leaf_factory = model_mock(LeafNode[schema_gen.rule_def_types])
         # Create manifest with multiple rules
         manifest = mock_type.build(
-            rules={f"rule_{i}": leaf_factory.build(rule={"rule_def_name": "is_active"}) for i in range(20)},
+            rules={
+                f"rule_{i}": leaf_factory.build(rule={"rule_def_name": "is_active", "params": {}}) for i in range(20)
+            },
         )
 
         engine.update_manifests(manifest)
