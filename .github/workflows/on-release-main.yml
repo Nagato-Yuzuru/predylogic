@@ -4,51 +4,53 @@ on:
   push:
     tags:
       - "sdks/python/v*"
+
 permissions:
   contents: write
-  id-token: write
 
 jobs:
-
-  pypi-publish:
-    name: Publish to PyPI
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
-
-      - name: Build package
-        run: just py-build
-
-      - name: Publish package
-        run: just py-publish
   github-release:
-    name: Create GitHub Release
-    needs: pypi-publish
+    name: Create Draft GitHub Release
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout main
         uses: actions/checkout@v6
         with:
+          ref: main
           fetch-depth: 0
+          persist-credentials: true
 
-      - name: Generate Changelog with git-cliff
+      - name: Generate release notes (latest tag only)
         uses: orhun/git-cliff-action@v4
-        id: git-cliff
+        id: cliff-latest
         with:
           config: sdks/python/cliff.toml
           args: --verbose --latest --strip header
-        env:
-          OUTPUT: CHANGELOG.md
 
-      - name: Create GitHub Release
+      - name: Regenerate full CHANGELOG.md
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: sdks/python/cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: sdks/python/CHANGELOG.md
+
+      - name: Commit CHANGELOG back to main
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sdks/python/CHANGELOG.md
+          if git diff --cached --quiet; then
+            echo "CHANGELOG.md unchanged; skipping commit."
+          else
+            git commit -m "chore(changelog): update for ${GITHUB_REF_NAME}"
+            git push origin HEAD:main
+          fi
+
+      - name: Create Draft GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          body: ${{ steps.git-cliff.outputs.content }}
-          draft: false
+          body: ${{ steps.cliff-latest.outputs.content }}
+          draft: true
           prerelease: false
