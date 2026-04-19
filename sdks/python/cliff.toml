@@ -17,6 +17,10 @@ commit_parsers = [
   { message = "^doc", group = "📚 Documentation" },
 ]
 
+[remote.github]
+owner = "Nagato-Yuzuru"
+repo = "predylogic"
+
 [changelog]
 header = """
 # Changelog
@@ -32,7 +36,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group }}
     {% for commit in commits %}
-        - {{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}]({{ commit.id }}))
+        - {% if commit.breaking %}⚠ **BREAKING** — {% endif %}{{ commit.message | upper_first }} ([`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/commit/{{ commit.id }}))
     {% endfor %}
 {% endfor %}\
 """
