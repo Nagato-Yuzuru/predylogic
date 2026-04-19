@@ -12,6 +12,8 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
 
 jobs:
   quality-python:
@@ -31,6 +33,7 @@ jobs:
 
   tests-and-type-check:
     permissions:
+      contents: read
       id-token: write
     runs-on: ubuntu-latest
     strategy:
