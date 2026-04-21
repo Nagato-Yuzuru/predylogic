@@ -95,4 +95,3 @@ All notable changes to the Python SDK will be documented in this file.
 - Optimize predicate execution and enhance caching mechanism ([`97bb4fa`](https://github.com/Nagato-Yuzuru/predylogic/commit/97bb4fa46199e7ac16afdaa653375d733de3bdb8))
 
 - Streamline predicate operations and enhance type handling ([`5943826`](https://github.com/Nagato-Yuzuru/predylogic/commit/5943826d1e88d648c19170b4dd00e86fbd9831df))
-
