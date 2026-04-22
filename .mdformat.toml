@@ -1,0 +1,11 @@
+# Route markdown through mdformat (+ mdformat-mkdocs / -gfm / -frontmatter).
+# The presence of this file tells conform.nvim to skip prettier for this repo's
+# markdown, preserving MkDocs pymdown extensions (admonitions, collapsible
+# blocks, content tabs).
+#
+# Install toolchain:
+#   uv tool install mdformat --with mdformat-mkdocs --with mdformat-gfm \
+#       --with mdformat-frontmatter --with mdformat-footnote
+
+number = true # preserve consecutive numbering (1. 2. 3.) instead of collapsing to all `1.`
+wrap = "keep"
