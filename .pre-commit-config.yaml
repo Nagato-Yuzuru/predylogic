@@ -17,7 +17,7 @@ repos:
         exclude: ^.devcontainer/devcontainer.json
       - id: pretty-format-json
         exclude: ^.devcontainer/devcontainer.json
-        args: [ --autofix, --no-sort-keys ]
+        args: [--autofix, --no-sort-keys]
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
@@ -25,7 +25,7 @@ repos:
     rev: "v0.14.14"
     hooks:
       - id: ruff-check
-        args: [ --exit-non-zero-on-fix ]
+        args: [--exit-non-zero-on-fix]
       - id: ruff-format
 
   - repo: local
@@ -35,7 +35,7 @@ repos:
         entry: uv run --no-sync ty check
         language: system
         pass_filenames: false
-        types_or: [ python, pyi ]
+        types_or: [python, pyi]
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
     hooks:
@@ -44,7 +44,7 @@ repos:
     rev: v4.12.1
     hooks:
       - id: commitizen
-        stages: [ commit-msg ]
+        stages: [commit-msg]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
@@ -61,4 +61,3 @@ repos:
         args:
           - --option
           - reorder_keys=true
-      - id: taplo-lint
