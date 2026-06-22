@@ -17,7 +17,7 @@ jobs:
     if: startsWith(github.event.release.tag_name, 'sdks/python/v')
     steps:
       - name: Check out release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
           fetch-depth: 0
