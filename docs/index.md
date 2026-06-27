@@ -1,1 +1,0 @@
-../sdks/python/README.md

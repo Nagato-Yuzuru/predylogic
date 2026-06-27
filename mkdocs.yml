@@ -7,16 +7,54 @@ edit_uri: edit/main/docs/
 repo_name: Nagato-Yuzuru/predylogic
 copyright: Maintained by <a href="https://Nagato-Yuzuru.com">Nagato-Yuzuru</a>.
 
+# Dev artifacts that live under docs/ but must not be published to the site.
+exclude_docs: |
+  superpowers/
+
 nav:
   - Home: index.md
-  - Quick Start: quick_start.md
-  - Modules: modules.md
+  - Quick Start: quick-start.md
+  - Reference: reference.md
   - Design:
       - Overview: design/index.md
-#      - Architecture Decisions:
-#          - "ADR 001: Evaluation Engine": design/adr/001_evaluation_engine.md
+      - "ADR 001: Evaluation Engine": design/adr/001_evaluation_engine.md
+      - "ADR 002: AST Compiler Optimization": design/adr/002_AST_compiler_optimization.md
+
 plugins:
   - search
+  # resolve_closest makes a cross-reference resolve to the closest page in the
+  # current language build (zh refs -> zh/reference, en refs -> reference). The
+  # API reference is rendered once per locale (English content via fallback), so
+  # without this every API symbol would have two URLs and autorefs would abort
+  # the strict build with "Multiple primary URLs". This is the intended
+  # multi-language behaviour, not a warning to silence.
+  - autorefs:
+      resolve_closest: true
+  # i18n: folder structure (docs/en, docs/zh). English is the default/fallback
+  # language; any page or asset missing in zh falls back to en. The API
+  # reference (reference.md) lives only under docs/en and therefore stays
+  # English in every locale. reconfigure_search auto-adds en+zh to the search
+  # index (zh segmentation via jieba); reconfigure_material adds the language
+  # switcher — both default on.
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh
+          name: 简体中文
+          build: true
+          nav_translations:
+            Home: 首页
+            Quick Start: 快速开始
+            Reference: API 参考
+            Design: 设计
+            Overview: 概览
+            "ADR 001: Evaluation Engine": "ADR 001:求值引擎"
+            "ADR 002: AST Compiler Optimization": "ADR 002:AST 编译优化"
   - mkdocstrings:
       handlers:
         python:

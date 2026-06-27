@@ -752,7 +752,7 @@ is_vip_manual = vip_manual(user)  # True
 
 ## Next Steps
 
-- Read the [Modules](modules.md) documentation for detailed API reference
+- Read the [Reference](reference.md) documentation for detailed API reference
 - Explore [Design & Architecture](design/index.md) for implementation details
 - Check out the test suite for more usage examples
 
