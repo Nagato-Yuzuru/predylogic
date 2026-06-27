@@ -1,5 +1,10 @@
 # PredyLogic
 
+<!-- Single source of truth for badges. The docs homepages (docs/en/index.md,
+     docs/zh/index.md) transclude this block via pymdownx.snippets:
+     `--8<-- "README.md:badges"`. The marker comments are invisible on
+     PyPI/GitHub. Edit badges here only. -->
+<!-- --8<-- [start:badges] -->
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
 [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/Nagato-Yuzuru/predylogic?utm_source=badge)
@@ -11,6 +16,7 @@
 [![Docs](https://img.shields.io/github/actions/workflow/status/Nagato-Yuzuru/predylogic/publish-docs.yml?label=docs)](https://nagato-yuzuru.github.io/predylogic)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)
 [![License](https://img.shields.io/github/license/Nagato-Yuzuru/predylogic)](https://github.com/Nagato-Yuzuru/predylogic)
+<!-- --8<-- [end:badges] -->
 
 An embedded, composable schema-driven predicate logic engine.
 

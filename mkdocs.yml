@@ -124,5 +124,10 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      # Resolve `--8<-- "README.md:badges"` against the repo root so the docs
+      # homepages can transclude the single badge block defined in the README.
+      base_path:
+        - .
+      check_paths: true
   - pymdownx.superfences

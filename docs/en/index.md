@@ -1,16 +1,6 @@
 # PredyLogic
 
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
-[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/Nagato-Yuzuru/predylogic?utm_source=badge)
-[![codecov](https://codecov.io/gh/Nagato-Yuzuru/predylogic/branch/main/graph/badge.svg)](https://codecov.io/gh/Nagato-Yuzuru/predylogic)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/predylogic)](https://pypi.org/project/predylogic/)
-
-[![PyPI - Status](https://img.shields.io/pypi/status/predylogic)](https://pypi.org/project/predylogic/)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Nagato-Yuzuru/predylogic/python-ci.yml)
-[![Docs](https://img.shields.io/github/actions/workflow/status/Nagato-Yuzuru/predylogic/publish-docs.yml?label=docs)](https://nagato-yuzuru.github.io/predylogic)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)
-[![License](https://img.shields.io/github/license/Nagato-Yuzuru/predylogic)](https://github.com/Nagato-Yuzuru/predylogic)
+--8<-- "README.md:badges"
 
 An embedded, composable schema-driven predicate logic engine.
 

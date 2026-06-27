@@ -1,5 +1,7 @@
 # predylogic
 
+--8<-- "README.md:badges"
+
 > 一个可嵌入、可组合、schema 驱动的谓词逻辑引擎。
 
 predylogic 把布尔谓词当作**可编译的 AST** 来处理,而不是逐次解释:
