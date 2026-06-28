@@ -14,6 +14,12 @@ exclude_docs: |
 nav:
   - Home: index.md
   - Quick Start: quick-start.md
+  - Guides:
+      - Overview: guides/index.md
+      - "Schema & Serde": guides/serde.md
+      - Hot Reloading: guides/hot-reload.md
+      - Tracing: guides/trace.md
+      - "Composition & Performance": guides/composition.md
   - Reference: reference.md
   - Design:
       - Overview: design/index.md
@@ -50,6 +56,11 @@ plugins:
           nav_translations:
             Home: 首页
             Quick Start: 快速开始
+            Guides: 指南
+            "Schema & Serde": Schema 与序列化
+            Hot Reloading: 热更新
+            Tracing: Trace 追踪
+            "Composition & Performance": 组合与性能
             Reference: API 参考
             Design: 设计
             Overview: 概览
