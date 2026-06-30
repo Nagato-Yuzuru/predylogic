@@ -13,77 +13,51 @@ In [ADR-001](./001_evaluation_engine.md), we decided to transition from a Closur
 AST-based compilation approach.
 
 While the initial AST implementation solved the "logic black box" issue and enabled advanced features like Trace/Skip,
-it encountered two critical performance bottlenecks when dealing with large-scale rule composition (e.g., depths of
-1000+.
+it hit two performance bottlenecks at large-scale rule composition (e.g., depths of 1000+).
 
 > It sounds rather perverse. In real-life scenarios, highly unlikely such a thing would exist:
 
-1. **Runtime RecursionError**: The generated AST remained a deeply nested binary tree structure—`Call(Call(...))`
-    —causing the Python interpreter to hit recursion limits during execution.
+1. Runtime `RecursionError`: the generated AST was a deeply nested binary tree—`Call(Call(...))`—causing the interpreter to hit recursion limits during execution.
 
 ??? info "closure_recursion"
 
     ![closure_recursion](../assets/closure_recursion.png)
 
-1. **Build Cost Explosion**: Python's bitwise `&` operator is left-associative. This resulted in an tuple copying
-    overhead during the construction of chains like `A & B & C ...`. Constructing a rule with 2000 nodes took over 100ms,
-    which is significantly slower than native Python import overhead.
+2. Build cost explosion: Python's `&` is left-associative, causing tuple-copying overhead when building `A & B & C ...`. A 2000-node rule took over 100ms to construct, significantly slower than native Python import overhead.
 
 ??? info "The first version of the AST incurred significantly higher construction costs compared to closures."
 
     ![prof](../assets/first_version_ast_prof.png)
 
-We require an architecture capable of delivering **native Python execution speed**, **extremely low build costs**, \*
-*unaffected by recursion depth limitations*\*, and **with observable intermediate processes**
+We need an architecture that delivers native Python execution speed, extremely low build cost, no recursion depth limit, and observable intermediate state.
 
 ## Exploration
 
-We experimented with several approaches during the refactoring process:
+We tried several approaches:
 
-1. **Closure Approach**:
+1. **Closure approach**: chained `lambda` functions. Execution speed was fine, but it hit Python's recursion limit at depths >1000 and couldn't support transparent Tracing or full Audit evaluation.
 
-- *Attempt*: Using chained `lambda` functions.
-- *Result*: Execution speed was acceptable, but it hit Python's recursion limit at depths >1000. It also failed to
-    support transparent Tracing and full Audit evaluation.
+2. **Naive AST approach**: maintaining a flat `children` list in `__and__` at build time. Generated flat runtime code, but the memory copying during construction was unacceptable.
 
-1. **Naive AST Approach**:
-
-- *Attempt*: Real-time maintenance of a flat `children` list within `__and__`.
-- *Result*: While it generated flat runtime code, the memory copying during construction resulted in complexity. The
-    build performance was unacceptable.
-
-1. **Final Approach: Lazy Build + Compile-time Flattening**:
-
-- *Decision*: Shift the computational burden of "flattening" from the Build time to the Compile time.
+3. **Lazy build + compile-time flattening**: shift the flattening burden from build time to compile time. This is the current approach.
 
 ## Decision
 
 ### 1. Lazy Binary Construction
 
-To resolve the build performance issue, we degraded the implementation of `__and__` and `__or__` to simple binary tree
-construction.
+To resolve the build performance issue, we degraded `__and__` and `__or__` to simple binary tree construction.
 
-- **Implementation**: `A & B` no longer attempts to merge lists; instead, it directly generates a binary node containing
-    `(self, other)`.
-- **Complexity**: Each & operation drops from O(N) (tuple copying) to O(1) (binary node allocation). An N-rule chain is O(N) to build, not O(N²).
-- **Supplementary API**: We introduced static methods `Predicate.all([...])` and `Predicate.any([...])`, leveraging the
-    underlying optimization of `tuple(list)` to achieve true batch allocation.
+`A & B` no longer tries to merge lists; it creates a binary node `(self, other)` directly. Each `&` drops from O(N) (tuple copying) to O(1) (binary node allocation), so an N-rule chain builds in O(N) not O(N²). We also added `Predicate.all([...])` and `Predicate.any([...])` as static methods that use `tuple(list)` internally for true batch allocation.
 
 ### 2. Smart Compiler
 
-Since the build phase now generates a "Left-leaning Binary Tree," compiling it directly would result in inefficient code
-prone to stack overflows. We introduced an **Iterative Chain Collector** within the `Compiler`.
+Since the build phase now generates a "left-leaning binary tree," compiling it directly would produce inefficient, stack-overflow-prone code. We introduced an **Iterative Chain Collector** in the `Compiler`.
 
-- **Logic**: When the compiler encounters an `AND/OR` node during AST traversal, it greedily drills down to the left (
-    Iterative Drill-down), reconstructing the nested binary structure into a flat list `[Leaf_1, Leaf_2, ..., Leaf_N]`.
-- **Output**: Generates `ast.BoolOp(values=[...])` (N-ary). The Python interpreter executes this flat structure linearly
-    with **zero stack frame overhead**.
+When the compiler encounters an `AND/OR` node, it greedily drills left (iterative drill-down), reconstructing the nested binary structure into a flat list `[Leaf_1, Leaf_2, ..., Leaf_N]`. The output is `ast.BoolOp(values=[...])` (N-ary), which the interpreter executes linearly with **zero stack frame overhead**.
 
 ### 3. Tiered Execution Strategy
 
-- **Default**: Uses `Predicate.all/any` + `Compiler`.
-- **Fast Path**: For the default scenario (Short-circuit enabled, Trace disabled), compiled Runners are cached via
-    `__slots__`, resulting in **zero overhead** for subsequent calls.
+The default uses `Predicate.all/any` + `Compiler`. For the default scenario (short-circuit on, Trace off), compiled Runners are cached via `__slots__`, so subsequent calls have **zero overhead**.
 
 ## Results & Benchmarks
 
@@ -104,66 +78,24 @@ environment.
 
 ### Key Achievements
 
-1. **Build Performance**: At depth 1000, Current is **4x faster** than handwritten Python and **127x faster** than
-    Closure (eliminates O(N²) tuple copying).
-2. **Runtime Performance**: Within **7% of native Python** (`def`) while maintaining full observability—Closure is 17x
-    slower at the same depth.
-3. **Robustness**: Removes Python's 1000-frame recursion limit entirely via iterative compilation.
+At depth 1000, the current implementation builds **4x faster** than handwritten Python and **127x faster** than the closure approach (eliminating O(N²) tuple copying). Runtime lands within **7% of native Python** (`def`) while maintaining full observability — the closure approach is 17x slower at the same depth. Iterative compilation removes Python's 1000-frame recursion limit entirely.
 
-**Trade-off**: Current pays a small (~7%) runtime cost for Trace/Audit capabilities. For hot paths requiring absolute
-minimal overhead,
-consider disabling tracing or using Naive Python for shallow chains (D\<50).
-We successfully achieved:
-
-1. **Build Speed**: 1000x improvement, matching the overhead of native object creation.
-2. **Execution Speed**: Fully matching the theoretical limit of handwritten native Python code (`a and b and c...`).
-3. **Robustness**: Completely eliminated runtime recursion overflow risks.
+**Trade-off**: the current approach pays a small (~7%) runtime cost for Trace/Audit capabilities. For hot paths requiring minimal overhead, consider disabling tracing or using naive Python for shallow chains (D<50).
 
 ## Limitations & Caveats
 
-Despite the excellent performance metrics, there are trade-offs in our design and limitations in our current testing:
+Despite the performance gains, there are trade-offs in the design and gaps in the current test coverage:
 
-1. **Heterogeneous Tree Overhead**
+1. Heterogeneous tree overhead. Compiler optimizations work best on pure AND or pure OR chains (current benchmarks only cover this case — contributions welcome). Mixed trees like `(A & B) | (C & D) | ...` degrade to ordinary recursive compilation; correctness is maintained but compile time increases slightly.
 
-    - The current compiler optimizations are most effective for **pure AND** or **pure OR** chains (homogeneous
-        chains)(Currently, there are only benchmarks designed for this specific scenario. Contributions are welcome, by the way.).
-    - If the rule tree is highly interleaved (e.g., `(A & B) | (C & D) | ...`), the compiler cannot perform large-scale
-        flattening and degrades to ordinary recursive compilation. While correctness is maintained, compilation time increases
-        slightly.
+2. Benchmark bias. Current benchmarks (`test_stability.py`) target depth-2000 pure AND chains — the compiler's sweet spot. Wide, shallow, or complex nested trees won't see gains as dramatic, though they remain better than the closure approach.
 
-2. **Benchmark Bias**
+3. Unquantified overhead for advanced features. Enabling `trace=True` or `short_circuit=False` injects additional helper functions. We haven't benchmarked Trace Mode rigorously, but expect it to run 2–5x slower than Default Mode due to object allocation and string formatting — the necessary cost of observability.
 
-    - Current benchmarks (`test_stability.py`) primarily target "Depth 2000 pure AND chains." This represents the
-        compiler's "Sweet Spot" (Best Case).
-    - For real-world scenarios involving "wide and shallow" or "complex nested" rule trees, the performance gains may not be
-        as dramatic as in the Deep Chain scenario (though still superior to the Closure approach).
-
-3. **Unquantified Overhead for Advanced Features**
-
-    - Enabling `trace=True` or `short_circuit=False` (Audit Mode) injects additional helper functions. We focused on the
-        extreme performance of Default Mode and have **not yet established strict benchmarks for performance penalties in
-        Trace Mode**.
-    - It is expected that Trace Mode will be 2-5x slower than Native Mode (due to object allocation and string formatting),
-        which is the necessary cost for "Observability."
-
-4. **Reliance on Static Type Checking**
-
-    - To achieve ultimate build performance, `Predicate.all` removes runtime type checking (`isinstance`). We rely entirely
-        on static type checkers (like MyPy/Pyright/ty) to ensure argument correctness. If a user forces a
-        non-`Predicate` object
-        into the list, errors will be deferred until compile time or runtime.
+4. Static type checking reliance. To maximize build performance, `Predicate.all` removes runtime type checking (`isinstance`). We rely entirely on static type checkers (mypy/pyright/ty) to catch argument errors. A non-`Predicate` object forced into the list will surface at compile time or runtime, not at the call site.
 
 ## Real-world Impact
 
-While we have achieved micro-second level optimization, it is crucial to view these metrics through a pragmatic lens:
+In real business scenarios, rule execution is typically I/O-bound (fetching user profiles, querying databases). The engine's 15µs execution time is negligible against network latency. The benchmark depth of 2000 is a stress test; real business rules rarely exceed 10–20 levels, and infinite-depth support is a reliability guarantee, not a daily requirement.
 
-1. **Contextual Overhead**: In actual business scenarios, rule execution is often I/O bound (e.g., fetching user profiles, querying DBs). The 15µs execution time of the engine itself is negligible compared to network latency (milliseconds).
-2. **Extreme Edge Cases**: The benchmark depth of 2000 is a stress test, not a usage pattern. Real-world business rules rarely exceed depths of 10-20. The ability to handle infinite depth serves as a reliability guarantee rather than a common requirement.
-
-**The primary motivation for this architectural overhaul was not just raw speed, but Observability and Flexibility.**
-
-We accept the minimal overhead of AST manipulation to unlock capabilities that "Hardcoded Python Logic" cannot provide:
-
-- **Atomic Rule Composition**: Enabling strict type-safe, reusable logic blocks (`is_adult`, `is_admin`) that can be tested in isolation and composed dynamically.
-- **First-class Observability**: Unlike opaque compiled code, our AST engine allows us to inject transparent **Tracing**, **Skipping**, and **Auditing** middleware. We can tell users *exactly* which predicate failed in a complex chain, which is impossible with native `if/else`.
-- **Dynamic Rule Distribution**: Decoupling logic definition from execution allows rules to be serialized, stored, and updated without redeploying the application (planned for future releases).
+The primary motivation for this work was observability and flexibility, not raw speed. We accept the small overhead of AST manipulation to unlock capabilities that hardcoded Python logic cannot provide: type-safe reusable rule blocks (`is_adult`, `is_admin`) that can be tested in isolation, transparent Tracing and Auditing middleware that tells you exactly which predicate failed, and rules that can be serialized and updated without redeploying (planned for a future release).
