@@ -1,23 +1,12 @@
 # 设计与架构
 
-!!! note "大纲草稿"
-    本节是 predylogic 的设计说明:为什么这么设计、做过哪些取舍。这部分也是 talk 的「深度」底料,
-    可以写得更有观点。各小节的 _斜体_ 文字是写作意图。
+> 设计笔记反映的是迭代早期的想法，API 可能已经变动（甚至被推翻）。最新接口以 [API 参考](../reference.md) 为准。
 
-> 提示:设计笔记反映的是迭代早期的想法,API 可能已经变动。最新接口以 [API 参考](../reference.md) 为准。
+本节记录 predylogic 为什么这么设计、做过哪些trade-off。
 
-## 四个支点
+## ADR
 
-_待写:用四个计算机科学概念串起整个引擎的设计,每个一段:_
+重大架构变更用 ADR 记录：
 
-- **Monoid 展平**:_AND / OR 构成幺半群,结合律让深层二叉树在编译期压成扁平 N-ary。_
-- **Lazy bytecode 编译**:_把规则树编译成原生 Python 字节码,而非递归解释。_
-- **逆变(contravariance)**:_`Predicate[T]` 对 `T` 逆变,保证多态上下文里的类型安全。_
-- **Currying(偏应用)**:_把配置绑定到逻辑之上,得到单参谓词,让测试退化为纯函数单测。_
-
-## 架构决策记录(ADR)
-
-_待写:一句话说明用 ADR 记录重大架构变更。_
-
-- [ADR 001:求值引擎](adr/001_evaluation_engine.md) — _为什么从闭包递归换成迭代式 AST 引擎。_
-- [ADR 002:AST 编译优化](adr/002_AST_compiler_optimization.md) — _做过哪些编译优化尝试,以及基准数据。_
+- [ADR 001:求值引擎](adr/001_evaluation_engine.md) — 为什么从闭包递归换成迭代式 AST 引擎。
+- [ADR 002:AST 编译优化](adr/002_AST_compiler_optimization.md) — 做过哪些编译优化尝试，以及最终的基准数据。

@@ -1,16 +1,12 @@
-# Design & Architecture
+# Design & architecture
 
-Welcome to the architectural documentation of **Predylogic**. This section details the internal design decisions,
-trade-offs, and performance considerations.
+> The design notes here reflect early-iteration thinking; the API may have changed (or been dropped). The [API Reference](../reference.md) is the source of truth for current interfaces.
 
-> **Heads up: The design notes here capture our thoughts during the early stages.
-Please don't treat these APIs as the "source of truth"—they may have changed (or been scrapped) as we iterated.
-Always refer to the API Reference for the latest updates.**
+This section records why predylogic is built the way it is, and the trade-offs behind it.
 
-## Architecture Decision Records (ADR)
+## ADRs
 
-We use ADRs to document significant architectural changes.
+We record significant architectural changes as ADRs:
 
-* [ADR 001: Evaluation Engine Migration](adr/001_evaluation_engine.md) - Why we moved from Recursive Closures
-  to an Iterative AST Engine.
-* [ADR 002: AST compiler optimization](adr/002_AST_compiler_optimization.md) - What attempts have we made?
+- [ADR 001: Evaluation Engine](adr/001_evaluation_engine.md) — why we moved from closure recursion to an iterative AST engine.
+- [ADR 002: AST Compiler Optimization](adr/002_AST_compiler_optimization.md) — the compiler optimizations we tried, and the final benchmarks.
