@@ -1,5 +1,12 @@
-# PredyLogic
+[中文](README.zh.md) | English
 
+# predylogic
+
+<!-- Single source of truth for badges. The docs homepages (docs/en/index.md,
+     docs/zh/index.md) transclude this block via pymdownx.snippets:
+     `--8<-- "README.md:badges"`. The marker comments are invisible on
+     PyPI/GitHub. Edit badges here only. -->
+<!-- --8<-- [start:badges] -->
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
 [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/Nagato-Yuzuru/predylogic?utm_source=badge)
@@ -11,340 +18,109 @@
 [![Docs](https://img.shields.io/github/actions/workflow/status/Nagato-Yuzuru/predylogic/publish-docs.yml?label=docs)](https://nagato-yuzuru.github.io/predylogic)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)](https://img.shields.io/github/commit-activity/m/Nagato-Yuzuru/predylogic)
 [![License](https://img.shields.io/github/license/Nagato-Yuzuru/predylogic)](https://github.com/Nagato-Yuzuru/predylogic)
+<!-- --8<-- [end:badges] -->
 
-An embedded, composable schema-driven predicate logic engine.
+An embedded, composable, type-safe predicate logic engine for Python.
 
+> v0.x; breaking changes can land between minor versions.
 
-> **Inspiration:** Heavily inspired by the architectural concepts discussed
-> by [ArjanCodes](https://www.youtube.com/watch?v=KqfMiuL3cx4).
+---
 
-> We are still in v0.x, breaking changes may occur between minor versions.
+Business rules rarely start out complex. You write one `if`. A few weeks later you add a branch. A quarter later that decision is spread across orders, fraud checks, and reporting, and nobody dares touch it. Changing one threshold means a code change, a review, and a deploy.
 
-## About Name
+predylogic splits logic in two: **what to check** lives in code, **how to combine it** lives in data. Policies can be loaded from config, swapped at runtime, and every evaluation can be traced:
 
-> **predy** (adj.) *Archaic British. Nautical.*
->1. (of a ship) prepared or ready for sailing or action.
->2. to make the ship ready for battle (e.g., "predy the decks").\
-    — *Collins English Dictionary*
+```
+❌ AND
+  ❌ is_safe
+  ✅ OR
+    ❌ is_high_value
+    ✅ in_regions
+```
 
-**predylogic** takes its name from this concept. It represents logic that is not hardcoded into the flow of battle, but
-defined, cleared for action, and "predy" for execution.
-
-It also serves as a nod to **Pred**icate **Logic**.
-
-## Overview
-
-**predylogic** is a headless, composable predicate logic engine for Python.
-
-It decouples business logic from control flow by treating rules as data, not code blocks. Unlike heavy-weight rule
-engines (e.g., Drools OAP ) or simple `if/else` spaghetti, predylogic sits in the middle: it offers **strong type
-safety**, *
-*zero external dependencies**, and **deferred execution**.
-
-It represents the shift from **imperative** control flow (hardcoded `if/else` checks) to **declarative** predicate
-definitions. The goal is to make logic "ready" (predy) for serialization, composition, and reuse.
-
-Designed for developers who need to define rules in Python, serialize them (planned), and execute them against strict
-data contexts.
-
-## Why PredyLogic?
-
-Applications often struggle with "Logic Sprawl":
-
-1. **Hardcoded `if/else**`: Fast but rigid. Changing logic requires code deployment.
-2. **Configuration Spaghetti**: JSON/YAML files that are untyped, hard to validate, and impossible to debug.
-   (Then it becomes a demonstration
-   of [Greenspun's tenth rule](https://en.wikipedia.org/wiki/Greenspun%27s_tenth_rule).)
-3. **Heavy Rule Engines**: Overkill solutions (Java-based or OPA like) that introduce significant latency and
-   infrastructure complexity.
-
-**PredyLogic** bridges the gap. It adopts a **Hybrid Architecture**:
-
-* **Define in Code**: Atomic logic (the "What") is written as pure, testable Python functions.
-* **Compose in Data**: Logic flow (the "How") is structured as data, loaded dynamically, and compiled at runtime.
-
-It provides the flexibility of a rule engine with the performance of native code.
-
-## Key Features
-
-* **Zero Infrastructure Dependencies**: No JVM, no sidecars, no external API servers. It runs entirely in-process using
-  the modern Python stack.
-* **Native-Level Performance**: Rules are not interpreted step-by-step; they are **compiled** into flat Python bytecode.
-  The abstraction cost is near-zero (comparable to handwritten code).
-* **Atomic Rule Factories**: Define your basic building blocks (`is_vip`, `amount_gt`) as plain Python functions.
-  Compose them dynamically from configuration files without changing code.
-* **Schema-Driven Validation**: Export a dynamic JSON Schema from your registry to validate your rule configurations.
-  Catch logic errors (e.g., passing a string to an integer field, using a non-existent rule definition.) at config
-  time, not runtime.
-* **Audit-Ready Execution**: Logic is no longer a black box. Trace every decision path to understand exactly *why* a
-  rule matched or failed (e.g., for compliance or debugging).
-
-## Quick Start
-
-Install the package:
+## Install
 
 ```shell
 pip install predylogic
+# or
+uv add predylogic
 ```
 
-> View the [online documentation](https://nagato-yuzuru.github.io/predylogic/quick_start)
-
-### 1. Define what can be checked. These are your stable building blocks.
+## Example
 
 ```python
 from typing import TypedDict
-from predylogic import Registry, all_of, any_of
+from predylogic import Registry
 
-
-# 1. Define the Context (Protocol or dataclass or Pydantic BaseModel, or any other type)
 class Transaction(TypedDict):
     amount: int
     region: str
     is_fraud_flagged: bool
 
+txn = Registry[Transaction]("txn")
 
-# 2. Initialize Registry
-registry = Registry[Transaction]("transaction_rules")
-
-
-# 3. Define Atomic Predicates
-@registry.rule_def()
+@txn.rule_def()
 def is_high_value(ctx: Transaction, threshold: int = 1000) -> bool:
     return ctx["amount"] >= threshold
 
-
-# Define aliases using parameter
-@registry.rule_def("check_region")
+@txn.rule_def()
 def in_regions(ctx: Transaction, regions: list[str]) -> bool:
     return ctx["region"] in regions
 
-
-@registry.rule_def()
+@txn.rule_def()
 def is_safe(ctx: Transaction) -> bool:
     return not ctx["is_fraud_flagged"]
-```
 
-The `@rule_def` decorator transforms your function into a **curried closure factory**.
-In type hint terms, it shifts the signature from `Callable[Concatenate[T, **P], bool]` to
-`Callable[**P, Callable[[T], bool]]`.
+# safe AND (high value OR in a target region)
+policy = is_safe() & (is_high_value(2000) | in_regions(["US", "EU"]))
 
-For example:
-You define this:
+assert policy({"amount": 5000, "region": "JP", "is_fraud_flagged": False})
 
-```python
-def is_high_value(ctx: Transaction, threshold: int = 1000) -> bool:
-    return ctx["amount"] >= threshold
-```
-
-The decorator transforms it conceptually into this:
-
-```python
-def is_high_value(threshold: int = 1000) -> Callable[[Transaction], bool]:
-    return lambda: ctx: ctx["amount"] >= threshold
-```
-
-This allows you to "pre-configure" the rule with arguments (partially apply it):
-`is_costly = is_high_value(2000)`
-
-### 2. Dynamic Composition (Simulation)
-
-> In a real app, this structure would be loaded from a JSON/YAML file or from database. Here we construct it to show
-> the API.
-
-```python
-# Rule: "Safe AND (High Value OR In Target Region)"
-# This structure validates against the rule_engine derived from the registry.
-
-
-# Alternatively, you may utilise the __and__, __or__, and __invert__ overloads (| & ~).
-#   For extensive isomorphic combinations, use `all_of/any_of` to improve performance.
-
-policy = all_of(
-    [
-        is_safe(),
-        any_of(
-            [
-                is_high_value(2000),
-                in_regions(["US", "EU"]),
-            ]
-        ),
-    ]
-)
-
-# The 'policy' object is now compiled and ready for hot-loop execution.
-```
-
-Internally, the engine uses **lazy bytecode compilation** to flatten this composition into raw bytecode, so the
-execution speed matches handwritten `and`/`or` chains with close zero abstraction cost. (Detailed profiling is
-available in the ADRs).
-
-### 3. Execution & Trace
-
-```python
-tx_data = {"amount": 500, "region": "US", "is_fraud_flagged": True}
-
-# Execute (Fast Path)
-assert policy(tx_data) is False
-
-# Execute with Audit Log (Slow Path)
-trace = policy(tx_data, trace=True, short_circuit=False)
-assert not policy(tx_data)
+# inspect the reasoning
+bad = {"amount": 500, "region": "US", "is_fraud_flagged": True}
+trace = policy(bad, trace=True, short_circuit=False)
 print(trace)
-# >>> Output:
-# ❌ AND
-#  ❌ is_safe
-#    └─ Context: {'amount': 500, 'region': 'US', 'is_fraud_flagged': True}
-#  ✅ OR
-#    ❌ is_high_value
-#      └─ Context: {'amount': 500, 'region': 'US', 'is_fraud_flagged': True}
-#    ✅ in_regions
 ```
 
-> NOTE: The trace functionality is currently undergoing iteration. Additional information will be incorporated.
-> You can customize the `TraceStyle` to fit your logging system.
-
-### 4. Serde:
-
-PredyLogic supports the combination of rules through configuration orchestration.
-
-#### Export JSON schema
-
-```python
-from predylogic import SchemaGenerator
-
-# here is the standard pydantic BaseModel.
-Manifest = SchemaGenerator(registry).generate()
-print(Manifest.model_json_schema())
+```
+❌ AND
+  ❌ is_safe
+  ✅ OR
+    ❌ is_high_value
+    ✅ in_regions
 ```
 
-#### Import from configuration
+`trace=True` switches the return value from `bool` to a result tree recording each node's verdict. `short_circuit=False` runs every branch so you see all the hits and misses at once — useful for compliance audits, debugging, or listing everything a user got wrong in one pass. The trace path is compiled separately, so leaving it off costs nothing.
 
-```python
-from predylogic import RegistryManager, RuleEngine
+Policies can also be loaded from JSON config and hot-reloaded at runtime without a restart. See [Schema & Serde](https://nagato-yuzuru.github.io/predylogic/guides/serde/) and [Hot Reloading](https://nagato-yuzuru.github.io/predylogic/guides/hot-reload/).
 
-manager = RegistryManager()
-manager.add_register(registry)
-json_data = """
-    {
-  "registry":"transaction_rules",
-  "rules":{
-    "policy":{
-      "node_type":"and",
-      "rules":[
-        {
-          "node_type":"leaf",
-          "rule":{
-            "rule_def_name":"is_safe",
-            "params":{}
-          }
-        },
-        {
-          "node_type":"or",
-          "rules":[
-            {
-              "node_type":"leaf",
-              "rule":{
-                "rule_def_name":"is_high_value",
-                "params":{
-                  "threshold":2000
-                }
-              }
-            },
-            {
-              "node_type":"leaf",
-              "rule":{
-                "rule_def_name":"check_region",
-                "params":{
-                  "regions":[
-                    "US",
-                    "EU"
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      ]
-    }
-  }
-}
-"""
+## Why not X?
 
-manifest = Manifest.model_validate_json(json_data)
-engine = RuleEngine(manager)
-engine.update_manifests(manifest)
+The common alternatives each cost something.
 
-policy = engine.get_predicate_handle("transaction_rules", "policy")
-assert policy(tx_data) is False
-```
+- Hardcoded `if/else` is the fastest to write, but logic and control flow get tangled — changing one threshold means a code change, a PR, and a redeploy; there is no runtime swap.
+- Untyped JSON/YAML looks flexible but nothing validates it: a wrong type or a reference to a rule that doesn't exist only blows up at runtime. Give it time and the YAML grows its own interpreter. [Greenspun's tenth rule](https://en.wikipedia.org/wiki/Greenspun%27s_tenth_rule), again.
+- A heavyweight rule engine like Drools or OPA is capable, but you stand up a separate runtime, DSL, and deploy pipeline. For a few dozen rules, that's overkill.
 
-> PredyLogic permits runtime updates to predicates. For further details, please consult the online documentation.
+predylogic runs in-process — no JVM, no sidecar. Atomic rules are plain Python functions you can test in isolation. Config is validated against a schema, so type mismatches and unknown rule names surface at config time, not runtime.
 
-## Under the Hood: The Engineering
+## Performance
 
-PredyLogic is not just a collection of helper functions; it is a domain-specific language (DSL) compiler built on strict
-computer science principles.
+On the default path (short-circuit on, Trace off) the predicate tree compiles to Python bytecode and is cached. Runtime overhead lands within 7% of native Python — close to a handwritten `and` / `or`. See [ADR 002](docs/en/design/adr/002_AST_compiler_optimization.md) for benchmarks.
 
-### 1. Algebraic Structures (Monoids)
+## Docs
 
-Boolean operators (`AND`, `OR`) form a **Monoid**. They are associative (`(A & B) & C == A & (B & C)`) and have an
-identity element (`True` for AND, `False` for OR).
-We leverage this mathematical property to perform **AST Flattening**. A deeply nested tree of binary operations (depth
-2000+)
-is algebraically reduced to a single N-ary operation during the compilation phase, enabling stack usage at runtime.
+Full guides, API reference, and design notes: [nagato-yuzuru.github.io/predylogic](https://nagato-yuzuru.github.io/predylogic/)
 
-### 2. Lazy Bytecode Compilation
+---
 
-Instead of interpreting the rule tree recursively (which is slow and stack-limited), PredyLogic acts as an embedded
-compiler.
+## About the name
 
-* **AOT Construction**: Rule definitions are validated and constructed as data structures.
-* **Lazy Bytecode**: Compilation: Upon the first execution (or explicit compilation), the object tree is transformed
-  into Python's
-  native `ast` (Abstract Syntax Tree) and compiled into into native Python bytecode on first execution and cached.
-  This means your logic runs at the speed of native Python opcodes (`JUMP_IF_FALSE`, etc.), bypassing the overhead of
-  function calls and object dispatch.
+> **predy** (adj.) *Archaic British. Nautical.*
+>
+> 1. (of a ship) prepared or ready for sailing or action.
+> 2. to make the ship ready for battle (e.g., "predy the decks").
+>
+> — *Collins English Dictionary*
 
-### 3. Type Theory (Contravariance)
-
-The `Predicate[T]` type is **contravariant** in `T`.
-
-This ensures strict type safety in a polymorphic context: A rule expecting a generic `Transaction` context can safely
-handle a more specific `FraudTransaction` context, but not vice versa.
-
-This prevents runtime `AttributeError` by catching schema mismatches
-during static analysis (MyPy/Pyright/ty).
-
-### 4. Partial Application (Currying)
-
-The engine strictly separates **Logic** from **Configuration** via **Partial Application**.
-
-When you invoke a rule factory like `is_high_value(threshold=1000)`, you are binding the parameters (Configuration) to
-the function (Logic) *before* execution.
-This transforms a generic multi-argument function into a specialized single-argument predicate (`CTX -> bool`).
-
-**This makes testing trivial: since your atomic rule definitions are typically pure functions, you can verify complex
-business logic with simple unit tests—no mocks,
-no fixtures, and no database required.**
-
-## Roadmap
-
-Next up: a minimal DSL to replace raw JSON/YAML configuration, followed by a CLI with schema-driven validation and LSP
-support.
-
-For the configuration [above](#4-serde) json, using DSL looks like
-
-```python
-## transaction_rules
-
-policy = is_safe() & (is_high_value(2000) | check_region(regions=["US", "EU"]))
-```
-
-Or
-
-```python
-## transaction_rules
-
-expensive = is_high_value(2000)
-policy = is_safe() & (expensive | check_region(regions=["US", "EU"]))
-```
+predylogic takes its name from predy: logic that isn't hardcoded into the flow of control, but defined, cleared, and made "predy" for execution. It's also a nod to **Pred**icate **Logic**.
