@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, ItemsView, Iterator, Mapping
 from functools import wraps
 from threading import RLock
 from typing import TYPE_CHECKING, Generic, ParamSpec, Protocol, TypeVar, runtime_checkable
@@ -61,6 +61,12 @@ class RegistryManager:
         Get a register by name.
         """
         return self.__registers_instance.get(name)
+
+    def items(self) -> ItemsView[str, Registry]:
+        """
+        Return a view of (name, registry) pairs.
+        """
+        return self.__registers_instance.items()
 
 
 class Registry(Generic[T_contra], Mapping[str, PredicateProducer[T_contra, ...]]):

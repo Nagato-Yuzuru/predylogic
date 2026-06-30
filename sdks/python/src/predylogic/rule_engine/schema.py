@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import inspect
+import json
+import types
+import typing
 from collections import OrderedDict
 from functools import cached_property, reduce
 from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, TypeVar
@@ -15,15 +18,104 @@ if TYPE_CHECKING:
 
     from pydantic.fields import FieldInfo
 
-    from predylogic.register.registry import PredicateProducer, Registry
+    from predylogic.register.registry import PredicateProducer, Registry, RegistryManager
 
 T_cap = TypeVar("T_cap")
 T_union = TypeVar("T_union")
 
+_PARAM_KIND_NAMES: dict[inspect._ParameterKind, str] = {
+    inspect.Parameter.POSITIONAL_ONLY: "positional_only",
+    inspect.Parameter.POSITIONAL_OR_KEYWORD: "positional_or_keyword",
+    inspect.Parameter.VAR_POSITIONAL: "var_positional",
+    inspect.Parameter.KEYWORD_ONLY: "keyword_only",
+    inspect.Parameter.VAR_KEYWORD: "var_keyword",
+}
+
+_VAR_PARAM_KINDS = frozenset({inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD})
+
+
+def _serialize_type(anno: Any) -> dict[str, Any]:  # noqa: ANN401, C901, PLR0911
+    if anno is inspect.Parameter.empty or anno is typing.Any:
+        return {"kind": "any"}
+    if isinstance(anno, str):
+        return {"kind": "unknown", "repr": anno}
+    if anno is type(None):
+        return {"kind": "none"}
+    if anno is int:
+        return {"kind": "int"}
+    if anno is str:
+        return {"kind": "str"}
+    if anno is float:
+        return {"kind": "float"}
+    if anno is bool:
+        return {"kind": "bool"}
+    if isinstance(anno, types.UnionType):
+        return {"kind": "union", "variants": [_serialize_type(a) for a in typing.get_args(anno)]}
+    origin = typing.get_origin(anno)
+    args = typing.get_args(anno)
+    if origin is typing.Union:
+        return {"kind": "union", "variants": [_serialize_type(a) for a in args]}
+    if origin is list:
+        return {"kind": "list", "element": _serialize_type(args[0] if args else typing.Any)}
+    if origin is dict:
+        return {
+            "kind": "dict",
+            "key": _serialize_type(args[0] if args else typing.Any),
+            "value": _serialize_type(args[1] if len(args) > 1 else typing.Any),
+        }
+    return {"kind": "unknown", "repr": str(anno)}
+
+
+def _rule_spec(producer: PredicateProducer) -> dict[str, Any]:
+    # RuleDefConverter sets __signature__ on the wrapper, which blocks eval_str.
+    # @wraps preserves __wrapped__ pointing at the original fn, whose annotations
+    # are string-deferred when the defining module uses `from __future__ import annotations`.
+    # Resolving via __wrapped__ + eval_str=True gives us actual type objects.
+    wrapped = getattr(producer, "__wrapped__", None)
+    if wrapped is not None:
+        try:
+            full_sig = inspect.signature(wrapped, eval_str=True)
+            # Drop the first parameter (the context arg, e.g. `user: User`).
+            params_seq = list(full_sig.parameters.values())[1:]
+        except Exception:
+            params_seq = list(inspect.signature(producer).parameters.values())
+    else:
+        params_seq = list(inspect.signature(producer).parameters.values())
+
+    doc = inspect.getdoc(producer)
+    params = [
+        {
+            "name": p.name,
+            "type": _serialize_type(p.annotation),
+            "required": p.default is inspect.Parameter.empty and p.kind not in _VAR_PARAM_KINDS,
+            "param_kind": _PARAM_KIND_NAMES[p.kind],
+        }
+        for p in params_seq
+    ]
+    spec: dict[str, Any] = {"params": params}
+    if doc:
+        spec["desc"] = doc
+    return spec
+
+
+def generate_workspace_spec(manager: RegistryManager) -> str:
+    """
+    Generate the predylogic native workspace spec as a JSON string.
+
+    The spec encodes every registry's rule names, parameter types, and calling
+    conventions. It is consumed by the Rust CLI (CI gate and LSP server) and
+    passed to the PyO3 parser at runtime as the trust boundary for DSL validation.
+    """
+    spec = {
+        "version": "1",
+        "registries": {name: SchemaGenerator(registry).generate_spec() for name, registry in manager.items()},
+    }
+    return json.dumps(spec)
+
 
 class SchemaGenerator(Generic[T_cap]):
     """
-    Generate JSON Schema for PredyLogic rules.
+    Generate JSON Schema and predylogic native specs from a Registry.
     """
 
     def __init__(self, registry: Registry[T_cap]):
@@ -58,6 +150,19 @@ class SchemaGenerator(Generic[T_cap]):
 
         model.model_rebuild()
         return model
+
+    def generate_spec(self) -> dict[str, Any]:
+        """
+        Generate the predylogic native spec for this registry.
+
+        Returns a dict encoding each rule's description, parameter names,
+        types, required flag, and calling convention. Intended for use by
+        the Rust CLI and PyO3 parser; see `generate_workspace_spec` for the
+        multi-registry JSON form.
+        """
+        return {
+            "rules": {name: _rule_spec(producer) for name, producer in self.registry.items()},
+        }
 
     @cached_property
     def rule_def_types(self) -> UnionType | type:
