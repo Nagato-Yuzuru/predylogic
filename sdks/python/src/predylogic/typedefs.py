@@ -13,4 +13,22 @@ LogicOp: TypeAlias = Literal["not", LogicBinOp]
 
 PredicateNodeType: TypeAlias = Literal["leaf", LogicOp]
 
-__all__ = ["LogicBinOp", "LogicOp", "PredicateNodeType", "RuleDef"]
+# Spec vocabulary: the discriminator tags for payload-less type nodes, and the
+# calling convention of a rule parameter (mirrors inspect.Parameter.kind).
+AtomKind: TypeAlias = Literal["int", "str", "float", "bool", "none", "any"]
+ParamKind: TypeAlias = Literal[
+    "positional_only",
+    "positional_or_keyword",
+    "var_positional",
+    "keyword_only",
+    "var_keyword",
+]
+
+__all__ = [
+    "AtomKind",
+    "LogicBinOp",
+    "LogicOp",
+    "ParamKind",
+    "PredicateNodeType",
+    "RuleDef",
+]

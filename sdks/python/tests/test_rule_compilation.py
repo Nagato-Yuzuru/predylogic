@@ -14,7 +14,7 @@ import pytest
 from predylogic import Registry, SchemaGenerator
 from predylogic.register.errs import RegistryNotFoundError
 from predylogic.rule_engine import RuleEngine
-from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode
+from predylogic.rule_engine.base import AndNode, LeafNode, NotNode, OrNode, RefNode, RuleSetManifest
 from predylogic.rule_engine.errs import RuleDefRingError
 from pydantic import ValidationError
 
@@ -396,8 +396,6 @@ class TestErrorCases:
     def test_cyclic_dependency_raises_ring_error(self, registry_manager, user_registry):
         """Verify RuleDefRingError raised for cyclic RefNode dependencies."""
         # Create manifest with cycle: A->B->C->A
-        from predylogic.rule_engine.base import RuleSetManifest
-
         manifest_dict = {
             "registry": "user_registry",
             "rules": {
@@ -414,8 +412,6 @@ class TestErrorCases:
 
     def test_self_referencing_rule_raises_ring_error(self, registry_manager, user_registry):
         """Verify RuleDefRingError raised for self-referencing rule."""
-        from predylogic.rule_engine.base import RuleSetManifest
-
         manifest_dict = {
             "registry": "user_registry",
             "rules": {
