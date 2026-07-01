@@ -13,7 +13,6 @@ from pydantic import ConfigDict, Field, RootModel, create_model
 from predylogic.rule_engine.base import BaseRuleConfig, BaseRuleParams, RuleSetManifest
 from predylogic.rule_engine.spec import (
     AtomType,
-    ParamKind,
     ParamSpec,
     ParamType,
     RegistrySpec,
@@ -31,6 +30,7 @@ if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
     from predylogic.register.registry import PredicateProducer, Registry, RegistryManager
+    from predylogic.typedefs import ParamKind
 
 T_cap = TypeVar("T_cap")
 T_union = TypeVar("T_union")

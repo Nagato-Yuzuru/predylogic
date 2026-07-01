@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from typing import Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
+
+if TYPE_CHECKING:
+    from predylogic.typedefs import AtomKind, ParamKind
 
 # ── type nodes ────────────────────────────────────────────────────────────────
 
@@ -11,7 +14,7 @@ from typing import Literal, TypeAlias
 class AtomType:
     """A type with no inner structure: int / str / float / bool / none / any."""
 
-    kind: Literal["int", "str", "float", "bool", "none", "any"]
+    kind: AtomKind
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,14 +53,6 @@ class TypeUnknown:
 ParamType: TypeAlias = AtomType | TypeList | TypeDict | TypeUnion | TypeUnknown
 
 # ── param ─────────────────────────────────────────────────────────────────────
-
-ParamKind: TypeAlias = Literal[
-    "positional_only",
-    "positional_or_keyword",
-    "var_positional",
-    "keyword_only",
-    "var_keyword",
-]
 
 
 @dataclass(frozen=True, slots=True)
