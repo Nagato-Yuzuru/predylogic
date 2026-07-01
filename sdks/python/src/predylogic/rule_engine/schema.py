@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import json
 import types
 import typing
 from collections import OrderedDict
@@ -12,6 +11,19 @@ from caseconverter import pascalcase
 from pydantic import ConfigDict, Field, RootModel, create_model
 
 from predylogic.rule_engine.base import BaseRuleConfig, BaseRuleParams, RuleSetManifest
+from predylogic.rule_engine.spec import (
+    AtomType,
+    ParamKind,
+    ParamSpec,
+    ParamType,
+    RegistrySpec,
+    RuleSpec,
+    TypeDict,
+    TypeList,
+    TypeUnion,
+    TypeUnknown,
+    WorkspaceSpec,
+)
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -23,7 +35,7 @@ if TYPE_CHECKING:
 T_cap = TypeVar("T_cap")
 T_union = TypeVar("T_union")
 
-_PARAM_KIND_NAMES: dict[inspect._ParameterKind, str] = {
+_PARAM_KIND_NAMES: dict[inspect._ParameterKind, ParamKind] = {
     inspect.Parameter.POSITIONAL_ONLY: "positional_only",
     inspect.Parameter.POSITIONAL_OR_KEYWORD: "positional_or_keyword",
     inspect.Parameter.VAR_POSITIONAL: "var_positional",
@@ -34,39 +46,38 @@ _PARAM_KIND_NAMES: dict[inspect._ParameterKind, str] = {
 _VAR_PARAM_KINDS = frozenset({inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD})
 
 
-def _serialize_type(anno: Any) -> dict[str, Any]:  # noqa: ANN401, C901, PLR0911
+def _serialize_type(anno: Any) -> ParamType:  # noqa: ANN401, C901, PLR0911
     if anno is inspect.Parameter.empty or anno is typing.Any:
-        return {"kind": "any"}
+        return AtomType(kind="any")
     if isinstance(anno, str):
-        return {"kind": "unknown", "repr": anno}
+        return TypeUnknown(repr=anno)
     if anno is type(None):
-        return {"kind": "none"}
+        return AtomType(kind="none")
     if anno is int:
-        return {"kind": "int"}
+        return AtomType(kind="int")
     if anno is str:
-        return {"kind": "str"}
+        return AtomType(kind="str")
     if anno is float:
-        return {"kind": "float"}
+        return AtomType(kind="float")
     if anno is bool:
-        return {"kind": "bool"}
+        return AtomType(kind="bool")
     if isinstance(anno, types.UnionType):
-        return {"kind": "union", "variants": [_serialize_type(a) for a in typing.get_args(anno)]}
+        return TypeUnion(variants=tuple(_serialize_type(a) for a in typing.get_args(anno)))
     origin = typing.get_origin(anno)
     args = typing.get_args(anno)
     if origin is typing.Union:
-        return {"kind": "union", "variants": [_serialize_type(a) for a in args]}
+        return TypeUnion(variants=tuple(_serialize_type(a) for a in args))
     if origin is list:
-        return {"kind": "list", "element": _serialize_type(args[0] if args else typing.Any)}
+        return TypeList(element=_serialize_type(args[0] if args else typing.Any))
     if origin is dict:
-        return {
-            "kind": "dict",
-            "key": _serialize_type(args[0] if args else typing.Any),
-            "value": _serialize_type(args[1] if len(args) > 1 else typing.Any),
-        }
-    return {"kind": "unknown", "repr": str(anno)}
+        return TypeDict(
+            key=_serialize_type(args[0] if args else typing.Any),
+            value=_serialize_type(args[1] if len(args) > 1 else typing.Any),
+        )
+    return TypeUnknown(repr=str(anno))
 
 
-def _rule_spec(producer: PredicateProducer) -> dict[str, Any]:
+def _rule_spec(producer: PredicateProducer) -> RuleSpec:
     # RuleDefConverter sets __signature__ on the wrapper, which blocks eval_str.
     # @wraps preserves __wrapped__ pointing at the original fn, whose annotations
     # are string-deferred when the defining module uses `from __future__ import annotations`.
@@ -83,34 +94,31 @@ def _rule_spec(producer: PredicateProducer) -> dict[str, Any]:
         params_seq = list(inspect.signature(producer).parameters.values())
 
     doc = inspect.getdoc(producer)
-    params = [
-        {
-            "name": p.name,
-            "type": _serialize_type(p.annotation),
-            "required": p.default is inspect.Parameter.empty and p.kind not in _VAR_PARAM_KINDS,
-            "param_kind": _PARAM_KIND_NAMES[p.kind],
-        }
+    params = tuple(
+        ParamSpec(
+            name=p.name,
+            type=_serialize_type(p.annotation),
+            required=p.default is inspect.Parameter.empty and p.kind not in _VAR_PARAM_KINDS,
+            param_kind=_PARAM_KIND_NAMES[p.kind],
+        )
         for p in params_seq
-    ]
-    spec: dict[str, Any] = {"params": params}
-    if doc:
-        spec["desc"] = doc
-    return spec
+    )
+    return RuleSpec(params=params, desc=doc)
 
 
-def generate_workspace_spec(manager: RegistryManager) -> str:
+def generate_workspace_spec(manager: RegistryManager) -> WorkspaceSpec:
     """
-    Generate the predylogic native workspace spec as a JSON string.
+    Generate the predylogic native workspace spec.
 
     The spec encodes every registry's rule names, parameter types, and calling
     conventions. It is consumed by the Rust CLI (CI gate and LSP server) and
     passed to the PyO3 parser at runtime as the trust boundary for DSL validation.
+    Call `.to_json()` on the result to serialise for the PyO3 / CLI boundary.
     """
-    spec = {
-        "version": "1",
-        "registries": {name: SchemaGenerator(registry).generate_spec() for name, registry in manager.items()},
-    }
-    return json.dumps(spec)
+    return WorkspaceSpec(
+        version="1",
+        registries={name: SchemaGenerator(registry).generate_spec() for name, registry in manager.items()},
+    )
 
 
 class SchemaGenerator(Generic[T_cap]):
@@ -151,18 +159,18 @@ class SchemaGenerator(Generic[T_cap]):
         model.model_rebuild()
         return model
 
-    def generate_spec(self) -> dict[str, Any]:
+    def generate_spec(self) -> RegistrySpec:
         """
         Generate the predylogic native spec for this registry.
 
-        Returns a dict encoding each rule's description, parameter names,
+        Returns a RegistrySpec encoding each rule's description, parameter names,
         types, required flag, and calling convention. Intended for use by
         the Rust CLI and PyO3 parser; see `generate_workspace_spec` for the
-        multi-registry JSON form.
+        multi-registry form.
         """
-        return {
-            "rules": {name: _rule_spec(producer) for name, producer in self.registry.items()},
-        }
+        return RegistrySpec(
+            rules={name: _rule_spec(producer) for name, producer in self.registry.items()},
+        )
 
     @cached_property
     def rule_def_types(self) -> UnionType | type:
