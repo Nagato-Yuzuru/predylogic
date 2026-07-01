@@ -7,7 +7,10 @@ and the _serialize_type() helper for all supported type nodes.
 
 from __future__ import annotations
 
+import datetime
+import inspect
 import json
+import typing
 
 from predylogic import (
     Registry,
@@ -46,9 +49,6 @@ class TestSerializeType:
         assert _serialize_type(type(None)) == AtomType(kind="none")
 
     def test_any_and_empty(self):
-        import inspect
-        import typing
-
         assert _serialize_type(typing.Any) == AtomType(kind="any")
         assert _serialize_type(inspect.Parameter.empty) == AtomType(kind="any")
 
@@ -75,8 +75,6 @@ class TestSerializeType:
         assert _serialize_type(list[list[str]]) == TypeList(element=TypeList(element=AtomType(kind="str")))
 
     def test_unknown_type_has_repr(self):
-        import datetime
-
         result = _serialize_type(datetime.date)
         assert isinstance(result, TypeUnknown)
         assert result.repr
@@ -243,7 +241,7 @@ class TestGenerateWorkspaceSpec:
 
     def test_empty_manager(self):
         spec = generate_workspace_spec(RegistryManager())
-        assert spec == WorkspaceSpec(version="1", registries={})
+        assert spec == WorkspaceSpec(registries={})
 
     def test_to_json_produces_valid_json(
         self,

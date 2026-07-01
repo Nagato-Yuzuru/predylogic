@@ -84,11 +84,11 @@ class RegistrySpec:
     rules: dict[str, RuleSpec]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class WorkspaceSpec:
     """Complete predylogic workspace spec covering every registry in a RegistryManager."""
 
-    version: str
+    version: str = field(default="1", init=False)
     registries: dict[str, RegistrySpec]
 
     def to_json(self) -> str:

@@ -106,15 +106,7 @@ allow-dict-calls-with-keyword-arguments = true
 "sdks/python/benchmarks/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
 "sdks/python/prof/*" = ["ANN", "D", "PLR0913", "PLR2004", "D103"]
 "sdks/python/src/predylogic/_version.py" = ["ALL"]
-"sdks/python/tests/*" = [
-  "ANN",
-  "D",
-  "PLR0913",
-  "PLR2004",
-  "FBT",
-  "TC",
-  "PLC0415",
-]
+"sdks/python/tests/*" = ["ANN", "D", "PLR0913", "PLR2004", "FBT", "TC"]
 
 [tool.ruff.format]
 preview = true

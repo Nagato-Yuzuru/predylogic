@@ -46,7 +46,7 @@ _PARAM_KIND_NAMES: dict[inspect._ParameterKind, ParamKind] = {
 _VAR_PARAM_KINDS = frozenset({inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD})
 
 
-def _serialize_type(anno: Any) -> ParamType:  # noqa: ANN401, C901, PLR0911
+def _serialize_type(anno: Any) -> ParamType:  # noqa: C901, PLR0911, ANN401
     if anno is inspect.Parameter.empty or anno is typing.Any:
         return AtomType(kind="any")
     if isinstance(anno, str):
@@ -116,7 +116,6 @@ def generate_workspace_spec(manager: RegistryManager) -> WorkspaceSpec:
     Call `.to_json()` on the result to serialise for the PyO3 / CLI boundary.
     """
     return WorkspaceSpec(
-        version="1",
         registries={name: SchemaGenerator(registry).generate_spec() for name, registry in manager.items()},
     )
 
