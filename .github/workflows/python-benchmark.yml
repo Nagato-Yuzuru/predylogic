@@ -33,7 +33,7 @@ jobs:
           python-version: "3.13"
 
       - name: Run Benchmark with CodSpeed
-        uses: CodSpeedHQ/action@v5.0.1
+        uses: CodSpeedHQ/action@v5.0.3
         with:
           mode: simulation
           run: |
