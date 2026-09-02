@@ -172,20 +172,31 @@ class SchemaGenerator(Generic[T_cap]):
         )
 
     @cached_property
+    def rule_config_models(self) -> dict[str, type[BaseRuleConfig]]:
+        """
+        Per-rule config model classes, keyed by rule_def name.
+
+        Each value is the ``BaseRuleConfig`` subclass generated for one rule
+        (``rule_def_name`` pinned to a ``Literal``, ``params`` typed from the
+        signature). ``rule_def_types`` derives its union from this map;
+        consumers that validate a single rule's config (e.g. the DSL compiler)
+        use it directly.
+        """
+        return {name: self._create_rule_model(name, producer) for name, producer in self.registry.items()}
+
+    @cached_property
     def rule_def_types(self) -> UnionType | type:
         """
         Generates the union of rule definitions from the current registry.
 
-        This method creates a tuple of rule model definitions based on the current rule
-        registry and combines them into a union type. If the registry is empty, it
-        returns `NoneType`. The union definition includes a discriminator field for
-        identifying specific rule definitions.
+        Combines the per-rule models from ``rule_config_models`` into a union
+        type. If the registry is empty, it returns `NoneType`.
 
         Returns:
             A union of all the rule definitions created from the registry or
             `NoneType` if no definitions exist.
         """
-        defs = tuple(self._create_rule_model(rule_name, producer) for rule_name, producer in self.registry.items())
+        defs = tuple(self.rule_config_models.values())
         if not defs:
             return type(None)
         return reduce(lambda a, b: a | b, defs)

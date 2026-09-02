@@ -1,3 +1,4 @@
+from .dsl import PdylError, compile_pdyl
 from .predicate import ComposablePredicate, Predicate, all_of, any_of, is_predicate, predicate
 from .register import Registry, RegistryManager
 from .rule_engine import (
@@ -18,6 +19,7 @@ __all__ = [
     "ParamKind",
     "ParamSpec",
     "ParamType",
+    "PdylError",
     "Predicate",
     "Registry",
     "RegistryManager",
@@ -29,6 +31,7 @@ __all__ = [
     "WorkspaceSpec",
     "all_of",
     "any_of",
+    "compile_pdyl",
     "generate_workspace_spec",
     "is_predicate",
     "predicate",

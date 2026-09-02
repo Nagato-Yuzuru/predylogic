@@ -1,8 +1,12 @@
 exclude = ["**/*__pycache__", "**/*egg-info", "**/tests", "**/.venv"]
 forbid_circular_dependencies = true
 ignore_type_checking_imports = true
-layers = ["rule_engine", "register", "predicate", "trace", "typedefs"]
+layers = ["dsl", "rule_engine", "register", "predicate", "trace", "typedefs"]
 source_roots = ["src"]
+
+[[modules]]
+layer = "dsl"
+path = "predylogic.dsl"
 
 [[modules]]
 layer = "rule_engine"
