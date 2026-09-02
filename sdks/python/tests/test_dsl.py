@@ -137,7 +137,11 @@ class TestBindings:
         src = "grown = is_adult()\ngate = grown & is_active()"
         manifest = compile_pdyl(src, user_registry)
         assert set(manifest.rules) == {"grown", "gate"}
-        assert '"node_type":"ref"' not in manifest.model_dump_json()
+        assert isinstance(root(manifest, "grown"), LeafNode)
+        children = kids(root(manifest, "gate"))
+        assert len(children) == 2
+        assert all(isinstance(child, LeafNode) for child in children)
+        assert children[0].rule.rule_def_name == "is_adult"
 
     def test_forward_reference(self, user_registry):
         src = "gate = grown & is_active()\ngrown = is_adult()"
@@ -207,17 +211,21 @@ class TestErrors:
             ("x = y = is_active()", "single-name assignment"),
             ("x = is_adult(min_age=is_active())", "pure data"),
             ("x = is_named({**{}})", "string literals"),
-            ('x = has_tags(**{"a": "b"})', "'\\*\\*' unpacking is not pdyl"),
         ],
     )
-    def test_whitelist_rejections(self, user_registry, geo_registry, src, fragment):
-        registry = geo_registry if "has_tags" in src else user_registry
+    def test_whitelist_rejections(self, user_registry, src, fragment):
         with pytest.raises(PdylError, match=fragment):
-            compile_pdyl(src, registry)
+            compile_pdyl(src, user_registry)
 
     def test_unexpected_keyword(self, user_registry):
         with pytest.raises(PdylError, match="unexpected keyword argument"):
             compile_pdyl("x = is_adult(min_agee=1)", user_registry)
+
+    def test_repeated_keyword_rejected_at_second_occurrence(self, user_registry):
+        src = "x = is_adult(min_age=1, min_age=2)"
+        with pytest.raises(PdylError, match=r"is_adult\(\): keyword argument repeated: min_age") as exc_info:
+            compile_pdyl(src, user_registry)
+        assert exc_info.value.offset == src.index("min_age=2") + 1
 
     def test_missing_required_argument(self, user_registry):
         with pytest.raises(PdylError, match="missing a required argument"):
@@ -279,10 +287,19 @@ class TestErrors:
         with pytest.raises(PdylError, match="unpack a list"):
             compile_pdyl('x = name_in(*{"a": 1})', geo_registry)
 
+    def test_double_star_unpacking_rejected_even_for_var_keyword_rule(self, geo_registry):
+        with pytest.raises(PdylError, match=r"'\*\*' unpacking is not pdyl"):
+            compile_pdyl('x = has_tags(**{"a": "b"})', geo_registry)
+
     def test_syntax_error_wrapped(self, user_registry):
         with pytest.raises(PdylError) as exc_info:
-            compile_pdyl("x = is_adult(min_age=1", user_registry)
-        assert exc_info.value.lineno == 1
+            compile_pdyl("x = is_adult(min_age=1", user_registry, filename="fraud.pdyl")
+        err = exc_info.value
+        cause = err.__cause__
+        assert isinstance(cause, SyntaxError)
+        # The parser's own message and position survive the wrap verbatim.
+        assert (err.msg, err.offset, err.text) == (cause.msg, cause.offset, cause.text)
+        assert (err.filename, err.lineno) == ("fraud.pdyl", 1)
 
     def test_position_and_filename(self, user_registry):
         src = "# comment\nok = is_active()\nx = frobnicate()"

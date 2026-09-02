@@ -17,7 +17,7 @@ from __future__ import annotations
 import ast
 import difflib
 import inspect
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias, TypedDict
 
 from pydantic import ValidationError
 
@@ -32,7 +32,36 @@ if TYPE_CHECKING:
     from predylogic.rule_engine.base import RuleSetManifest
 
 Value: TypeAlias = "int | float | str | bool | list[Value] | dict[str, Value] | None"
-_Node: TypeAlias = "dict[str, object]"
+
+
+# Static shape of the dicts the compiler emits, mirroring the node union in
+# ``rule_engine.base``; ``model_validate`` in ``run`` remains the runtime gate.
+class _RuleConfig(TypedDict):
+    rule_def_name: str
+    params: dict[str, Value]
+
+
+class _LeafNode(TypedDict):
+    node_type: Literal["leaf"]
+    rule: _RuleConfig
+
+
+class _AndNode(TypedDict):
+    node_type: Literal["and"]
+    rules: list[_Node]
+
+
+class _OrNode(TypedDict):
+    node_type: Literal["or"]
+    rules: list[_Node]
+
+
+class _NotNode(TypedDict):
+    node_type: Literal["not"]
+    rule: _Node
+
+
+_Node: TypeAlias = "_LeafNode | _AndNode | _OrNode | _NotNode"
 
 
 def compile_pdyl(src: str, registry: Registry, *, filename: str = "<pdyl>") -> RuleSetManifest:
@@ -149,14 +178,14 @@ class _Compiler:
             return [*self._flatten(expr.left, op), *self._flatten(expr.right, op)]
         return [self._pred(expr)]
 
-    def _leaf(self, call: ast.Call) -> _Node:
+    def _leaf(self, call: ast.Call) -> _LeafNode:
         """A rule_def call: bind arguments by signature, validate params by model."""
         if not isinstance(call.func, ast.Name):
             self._fail(call.func, "only registry rule_defs can be called")
         name = call.func.id
         if name not in self._registry:
             self._fail(call.func, _unknown_rule_def(name, self._registry))
-        rule = {"rule_def_name": name, "params": self._bind(call, name)}
+        rule: _RuleConfig = {"rule_def_name": name, "params": self._bind(call, name)}
         try:
             self._generator.rule_config_models[name].model_validate(rule)
         except ValidationError as e:
@@ -172,6 +201,8 @@ class _Compiler:
         for kw in call.keywords:
             if kw.arg is None:
                 self._fail(kw.value, "'**' unpacking is not pdyl; pass keywords directly")
+            if kw.arg in kwargs:
+                self._fail(kw, f"{name}(): keyword argument repeated: {kw.arg}")
             kwargs[kw.arg] = self._value(kw.value)
         try:
             bound = inspect.signature(self._registry[name]).bind(*args, **kwargs)
