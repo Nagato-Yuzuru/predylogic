@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to the Python SDK will be documented in this file.
 
+## [0.1.1] - 2026-09-02
+
+### 📚 Documentation
+
+- Restructure docs into per-language ([`5e03c30`](https://github.com/Nagato-Yuzuru/predylogic/commit/5e03c302e52c5610cf20bd0f9df8cd734a7334e4))
+
+
+### 🚀 Features
+
+- Spec generation  ([`22c9489`](https://github.com/Nagato-Yuzuru/predylogic/commit/22c9489f92be4a9e8231509b2fa1dad52b987063))
+
+- Compile the .pdyl Python-subset DSL  (#67) ([`5bcd62f`](https://github.com/Nagato-Yuzuru/predylogic/commit/5bcd62fa0549ab0da7f8291345c8ee94875b413a))
+
 ## [0.1.0] - 2026-04-19
 
 ### 🐛 Bug Fixes
@@ -95,3 +108,4 @@ All notable changes to the Python SDK will be documented in this file.
 - Optimize predicate execution and enhance caching mechanism ([`97bb4fa`](https://github.com/Nagato-Yuzuru/predylogic/commit/97bb4fa46199e7ac16afdaa653375d733de3bdb8))
 
 - Streamline predicate operations and enhance type handling ([`5943826`](https://github.com/Nagato-Yuzuru/predylogic/commit/5943826d1e88d648c19170b4dd00e86fbd9831df))
+
