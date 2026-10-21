@@ -35,6 +35,18 @@ jobs:
         env:
           OUTPUT: sdks/python/CHANGELOG.md
 
+      - name: Install prek
+        uses: j178/prek-action@5337cb91e0fa35a7ff31b9ca345126d8bbbcdf16 # v2.0.6
+        with:
+          install-only: true
+
+      # git-cliff ends the file with a blank line, which end-of-file-fixer rejects on every
+      # PR. The first run fixes (and exits 1 if it changed anything); the second must pass.
+      - name: Normalize CHANGELOG.md with the repo's fixers
+        run: |
+          normalize() { prek run end-of-file-fixer trailing-whitespace --files sdks/python/CHANGELOG.md; }
+          normalize || normalize
+
       - name: Commit CHANGELOG back to main
         continue-on-error: true
         run: |
