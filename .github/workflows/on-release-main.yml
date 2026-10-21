@@ -14,21 +14,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
           persist-credentials: true
 
       - name: Generate release notes (latest tag only)
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
         id: cliff-latest
         with:
           config: sdks/python/cliff.toml
           args: --verbose --latest --strip header
 
       - name: Regenerate full CHANGELOG.md
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
         with:
           config: sdks/python/cliff.toml
           args: --verbose
@@ -61,7 +61,7 @@ jobs:
           fi
 
       - name: Create Draft GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           body: ${{ steps.cliff-latest.outputs.content }}
           draft: true

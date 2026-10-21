@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
 
@@ -21,9 +21,9 @@ jobs:
         with:
           install-only: true
 
-      # Same file scope as the quality-python gate. Hooks that cannot fix are still
-      # enforced there, so their failures are ignored here; ty is skipped because it
-      # needs the synced uv environment.
+      # Same scope as the quality-python gate (file-scoped hooks see only changed files).
+      # Hooks that cannot fix are still enforced there, so their failures are ignored
+      # here; ty is skipped because it needs the synced uv environment.
       - name: Apply fixable hooks
         run: prek run --from-ref HEAD^1 --to-ref HEAD --skip ty || true
 

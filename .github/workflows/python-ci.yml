@@ -22,7 +22,7 @@ jobs:
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
 
-      # A PR answers only for the files it changes (HEAD^1 is the base side of the
+      # File-scoped hooks see only the files a PR changes (HEAD^1 is the base side of the
       # merge commit); pushes to main check the whole tree.
       - name: Run prek
         uses: j178/prek-action@v2
