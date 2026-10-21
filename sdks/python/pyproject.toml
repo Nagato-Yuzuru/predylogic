@@ -42,7 +42,7 @@ Homepage = "https://Nagato-Yuzuru.github.io/predylogic/"
 Repository = "https://github.com/Nagato-Yuzuru/predylogic"
 
 [dependency-groups]
-dev = ["tox-uv>=1.29.0", "deptry>=0.24.0", "ty>=0.0.14", "ruff>=0.14.14"]
+dev = ["tox-uv>=1.36.1", "deptry>=0.24.0", "ty>=0.0.14", "ruff>=0.14.14"]
 prof = ["memray>=1.19.1", "py-spy>=0.4.1"]
 test = [
   "polyfactory>=3.2.0",
@@ -91,7 +91,7 @@ source = ["src"]
 
 [tool.tox]
 env_list = ["3.10", "3.11", "3.12", "3.13", "3.14", "lint"]
-requires = ["tox-uv>=1.29.0"]
+requires = ["tox-uv>=1.36.1"]
 
 [tool.tox.env_run_base]
 commands = [
