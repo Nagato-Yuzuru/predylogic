@@ -17,6 +17,9 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    # Dependency bumps are gated by CI and auto-merged; reviewing them only burns quota.
+    ignore_usernames:
+      - "dependabot[bot]"
 
   # Only negations, so everything not listed here is still reviewed.
   path_filters:
