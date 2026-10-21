@@ -1,0 +1,26 @@
+name: "prek scope"
+description: "Pick the `prek run` file selection shared by the quality gate and autofix"
+
+outputs:
+  args:
+    description: "File-selection arguments for `prek run`"
+    value: ${{ steps.pick.outputs.args }}
+
+runs:
+  using: "composite"
+  steps:
+    # A PR answers only for the files it changes (HEAD^1 is the base side of the merge
+    # commit, so checkout needs fetch-depth: 2). A PR that changes the hook config gets
+    # the whole tree, since a hook upgrade can flag files the PR never touched. Pushes
+    # and manual runs always check the whole tree.
+    - id: pick
+      shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+      run: |
+        if [ "$EVENT" != pull_request ] \
+          || git diff --name-only HEAD^1 HEAD | grep -qx .pre-commit-config.yaml; then
+          echo "args=--all-files" >> "$GITHUB_OUTPUT"
+        else
+          echo "args=--from-ref HEAD^1 --to-ref HEAD" >> "$GITHUB_OUTPUT"
+        fi

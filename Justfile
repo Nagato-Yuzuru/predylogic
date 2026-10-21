@@ -35,6 +35,13 @@ py-build: py-clean-build
     @echo "Creating wheel file"
     uvx --from build pyproject-build --installer uv --outdir {{ PY_SDK }}/dist {{ PY_SDK }}
 
+# Write the changelog for an upcoming release; merge it through a PR, then tag the merge commit
+# git-cliff ends the file with a blank line: the first fixer run repairs it, the second verifies.
+py-changelog version:
+    git cliff --config {{ PY_SDK }}/cliff.toml --tag sdks/python/v{{ version }} --output {{ PY_SDK }}/CHANGELOG.md
+    prek run end-of-file-fixer trailing-whitespace --files {{ PY_SDK }}/CHANGELOG.md \
+        || prek run end-of-file-fixer trailing-whitespace --files {{ PY_SDK }}/CHANGELOG.md
+
 # Publish Python package
 py-publish:
     uv publish --directory {{ PY_SDK }}
