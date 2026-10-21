@@ -2,11 +2,6 @@ name: python-ci.yml
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'sdks/python/src/**'
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - '.github/workflows/python-ci.yml'
   pull_request:
     types: [ opened, synchronize, ready_for_review ]
     branches: [ "main" ]
@@ -21,12 +16,18 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
 
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
 
+      # File-scoped hooks see only the files a PR changes (HEAD^1 is the base side of the
+      # merge commit); pushes to main check the whole tree.
       - name: Run prek
         uses: j178/prek-action@v2
+        with:
+          extra-args: ${{ github.event_name == 'pull_request' && '--from-ref HEAD^1 --to-ref HEAD' || '--all-files' }}
 
       - name: Run checks
         run: just py-check

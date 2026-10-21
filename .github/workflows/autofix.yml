@@ -1,0 +1,33 @@
+name: autofix.ci # the autofix.ci app only accepts fixes from a workflow with this name
+on:
+  pull_request:
+    types: [ opened, synchronize, ready_for_review ]
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: Install prek
+        uses: j178/prek-action@5337cb91e0fa35a7ff31b9ca345126d8bbbcdf16 # v2.0.6
+        with:
+          install-only: true
+
+      # Same scope as the quality-python gate (file-scoped hooks see only changed files).
+      # Hooks that cannot fix are still enforced there, so their failures are ignored
+      # here; ty is skipped because it needs the synced uv environment.
+      - name: Apply fixable hooks
+        run: prek run --from-ref HEAD^1 --to-ref HEAD --skip ty || true
+
+      # Without a skip marker, Dependabot stops rebasing a PR once someone else pushes to it.
+      - uses: autofix-ci/action@c5b2d67aa2274e7b5a18224e8171550871fc7e4a # v1.3.4
+        with:
+          commit-message: "chore(autofix): apply prek fixes [dependabot skip]"
