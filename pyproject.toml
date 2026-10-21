@@ -6,7 +6,7 @@ version = "0.0.0"
 [dependency-groups]
 dev = [
   "ty>=0.0.14",
-  "ruff>=0.14.14",
+  "ruff>=0.17.1",
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.7",
   "mkdocstrings[python]>=1.0.6",
