@@ -21,11 +21,20 @@ jobs:
         with:
           install-only: true
 
-      # Same scope as the quality-python gate (file-scoped hooks see only changed files).
-      # Hooks that cannot fix are still enforced there, so their failures are ignored
-      # here; ty is skipped because it needs the synced uv environment.
+      - name: Choose prek scope
+        id: scope
+        uses: ./.github/actions/prek-scope
+
+      # Same scope as the quality-python gate. Hooks that cannot fix are still enforced
+      # there, so their failures are ignored here; ty is skipped because it needs the
+      # synced uv environment.
       - name: Apply fixable hooks
-        run: prek run --from-ref HEAD^1 --to-ref HEAD --skip ty || true
+        env:
+          SCOPE: ${{ steps.scope.outputs.args }}
+        run: |
+          # SCOPE holds several arguments and must word-split.
+          # shellcheck disable=SC2086
+          prek run $SCOPE --skip ty || true
 
       # Without a skip marker, Dependabot stops rebasing a PR once someone else pushes to it.
       - uses: autofix-ci/action@c5b2d67aa2274e7b5a18224e8171550871fc7e4a # v1.3.4
