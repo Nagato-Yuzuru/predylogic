@@ -27,7 +27,7 @@ keywords = [
 dependencies = [
   "case-converter>=1.2.0",
   "pydantic>=2.12.5",
-  "typing-extensions>=4.15.0",
+  "typing-extensions>=4.16.0",
 ]
 description = "An embedded, composable schema-driven predicate logic engine."
 dynamic = ["version"]
