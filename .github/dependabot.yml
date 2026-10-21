@@ -15,10 +15,14 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    # One PR for every minor/patch bump: separate PRs all touch uv.lock, so each merge
+    # puts the rest into conflict and they land one rebase at a time. ty and ruff stay
+    # out because their 0.x bumps routinely add diagnostics and would hold the whole
+    # group red; they get individual PRs.
     groups:
-      dev-dependencies:
-        dependency-type: "development"
+      minor-and-patch:
         update-types: [ "minor", "patch" ]
+        exclude-patterns: [ "ty", "ruff" ]
 
   # - package-ecosystem: "cargo"
   #   directory: "/cli"
