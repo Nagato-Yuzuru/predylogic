@@ -42,7 +42,7 @@ Homepage = "https://Nagato-Yuzuru.github.io/predylogic/"
 Repository = "https://github.com/Nagato-Yuzuru/predylogic"
 
 [dependency-groups]
-dev = ["tox-uv>=1.36.1", "deptry>=0.24.0", "ty>=0.0.14", "ruff>=0.17.1"]
+dev = ["tox-uv>=1.36.1", "deptry>=0.24.0", "ty>=0.0.90", "ruff>=0.17.1"]
 prof = ["memray>=1.19.1", "py-spy>=0.4.1"]
 test = [
   "polyfactory>=3.2.0",
@@ -52,7 +52,7 @@ test = [
   "pytest-codspeed>=5.0.3",
   "pytest-cov>=7.0.0",
   "tach>=0.33.1",
-  "ty>=0.0.13",
+  "ty>=0.0.90",
 ]
 
 [build-system]
