@@ -45,7 +45,7 @@ Repository = "https://github.com/Nagato-Yuzuru/predylogic"
 dev = ["tox-uv>=1.36.1", "deptry>=0.24.0", "ty>=0.0.14", "ruff>=0.17.1"]
 prof = ["memray>=1.19.1", "py-spy>=0.4.1"]
 test = [
-  "polyfactory>=3.2.0",
+  "polyfactory>=3.5.0",
   "pytest>=9.0.2",
   "pytest-benchmark>=5.2.3",
   "pytest-codeblocks>=0.17.0",
